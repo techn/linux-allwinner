@@ -210,6 +210,8 @@
 /* Atheros AR933X SoC */
 #define PORT_AR933X	99
 
+/* Allwinner UARTs */
+#define PORT_SW		100
 
 #ifdef __KERNEL__
 

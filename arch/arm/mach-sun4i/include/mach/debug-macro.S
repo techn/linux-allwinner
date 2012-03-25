@@ -9,7 +9,7 @@
 #include <mach/hardware.h>
 #include <mach/uart_regs.h>
 
-	.macro	addruart, rp, rv
+	.macro	addruart, rp, rv, tmp
 	ldr	\rp, =PA_UARTS_BASE
 	ldr	\rv, =VA_UARTS_BASE
 #if CONFIG_SW_DEBUG_UART != 0

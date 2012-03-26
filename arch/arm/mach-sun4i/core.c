@@ -389,9 +389,8 @@ static void __init sw_reserve(void)
 	}
 }
 
-static void __init sw_fixup(struct machine_desc *desc,
-                  struct tag *tags, char **cmdline,
-                  struct meminfo *mi)
+static void __init sw_fixup(struct tag *tags, char **cmdline,
+			    struct meminfo *mi)
 {
     u32 size;
 

@@ -531,7 +531,7 @@ MACHINE_START(SUN4I, "sun4i")
 	.init_irq       = sw_init_irq,
 	.timer          = &sw_timer,
 	.init_machine   = sw_init,
-	.boot_params    = (unsigned long)(0x40000000 + 0x100),
+	.atag_offset	= 0x100,
 MACHINE_END
 
 

@@ -2,7 +2,6 @@
 #include <linux/device.h>
 #include <linux/dma-mapping.h>
 #include <linux/platform_device.h>
-#include <linux/sysdev.h>
 #include <linux/interrupt.h>
 #include <linux/amba/bus.h>
 #include <linux/amba/clcd.h>
@@ -259,12 +258,13 @@ void __init sw_map_io(void)
     iotable_init(sw_io_desc, ARRAY_SIZE(sw_io_desc));
 }
 
-struct sysdev_class sw_sysclass = {
+struct bus_type sw_subsys = {
     .name = "sw-core",
+    .dev_name = "sw-core",
 };
 
-static struct sys_device sw_sysdev = {
-    .cls = &sw_sysclass,
+static struct device sw_dev = {
+    .bus = &sw_subsys,
 };
 
 static u32 DRAMC_get_dram_size(void)
@@ -308,14 +308,14 @@ extern unsigned long g2d_size;
 static int __init sw_core_init(void)
 {
     pr_info("DRAM Size: %u\n", DRAMC_get_dram_size());
-    return sysdev_class_register(&sw_sysclass);
+    return subsys_system_register(&sw_subsys, NULL);
 }
 core_initcall(sw_core_init);
 
 extern int sw_register_clocks(void);
 void __init sw_init(void)
 {
-    sysdev_register(&sw_sysdev);
+    device_register(&sw_dev);
 }
 
 static void __init sw_timer_init(void)

@@ -22,7 +22,6 @@
 #include <linux/sched.h>
 #include <linux/spinlock.h>
 #include <linux/interrupt.h>
-#include <linux/sysdev.h>
 #include <linux/slab.h>
 #include <linux/errno.h>
 #include <linux/io.h>
@@ -1562,9 +1561,9 @@ EXPORT_SYMBOL(sw_dma_getcurposition);
 
 
 /* system device class */
-
-struct sysdev_class dma_sysclass = {
+struct bus_type dma_subsys = {
 	.name		= "sw-dma",
+	.dev_name	= "sw-dma",
 };
 
 /* kmem cache implementation */
@@ -1578,7 +1577,7 @@ static void sw_dma_cache_ctor(void *p)
 
 static int __init sw_dma_sysclass_init(void)
 {
-	int ret = sysdev_class_register(&dma_sysclass);
+	int ret = subsys_system_register(&dma_subsys, NULL);
 
 	if (ret != 0)
 		printk(KERN_ERR "dma sysclass registration failed\n");
@@ -1594,9 +1593,9 @@ static int __init sw_dma_sysdev_register(void)
 	int channel, ret;
 
 	for (channel = 0; channel < dma_channels; cp++, channel++) {
-		cp->dev.cls = &dma_sysclass;
+		cp->dev.bus = &dma_subsys;
 		cp->dev.id  = channel;
-		ret = sysdev_register(&cp->dev);
+		ret = device_register(&cp->dev);
 
 		if (ret) {
 			printk(KERN_ERR "error registering dev for dma %d\n",

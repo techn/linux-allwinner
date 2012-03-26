@@ -17,7 +17,6 @@
 */
 #include <linux/kernel.h>
 #include <linux/init.h>
-#include <linux/sysdev.h>
 #include <linux/serial_core.h>
 
 #include <mach/dma.h>
@@ -229,19 +228,22 @@ static struct sw_dma_selection __initdata sw_dma_sel = {
 	.map_size	= ARRAY_SIZE(sw_dma_mappings),
 };
 
-static int __init sw_dma_add(struct sys_device *sysdev)
+static int __init sw_dma_add(struct device *dev, struct subsys_interface *sif)
 {
 	sw15_dma_init();
 	return sw_dma_init_map(&sw_dma_sel);
 }
 
-static struct sysdev_driver __initdata sw_dma_driver = {
-	.add	= sw_dma_add,
+extern struct bus_type dma_subsys;
+static struct subsys_interface __initdata sw_dma_interface = {
+	.name = "sw_dma",
+	.subsys = &dma_subsys,
+	.add_dev = sw_dma_add,
 };
 
 static int __init sw_dma_drvinit(void)
 {
-	return sysdev_driver_register(&sw_sysclass, &sw_dma_driver);
+	return subsys_interface_register(&sw_dma_interface);
 }
 
 arch_initcall(sw_dma_drvinit);

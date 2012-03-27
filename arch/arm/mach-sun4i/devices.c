@@ -41,6 +41,8 @@
 #include <mach/gpio_v2.h>
 #include <mach/system.h>
 
+#define SW_SID_ADDR(N) (const volatile void __iomem *)(SW_VA_SID_IO_BASE+N*sizeof(int))
+
 static atomic_t sw_sys_status = ATOMIC_INIT(0);
 
 static struct sw_script_para script_para;
@@ -121,17 +123,12 @@ static int __init sw_sys_init(void)
 /* This module will not be remove */
 module_init(sw_sys_init);
 
-static inline int sid_readl(unsigned i)
+static void sw_get_sid(int *a, int *b, int *c, int *d)
 {
-	return readl(SW_VA_SID_IO_BASE+i*sizeof(int));
-}
-
-static inline void sw_get_sid(int *a, int *b, int *c, int *d)
-{
-	*a = sid_readl(0);
-	*b = sid_readl(1);
-	*c = sid_readl(2);
-	*d = sid_readl(3);
+	*a = readl(SW_SID_ADDR(0));
+	*b = readl(SW_SID_ADDR(1));
+	*c = readl(SW_SID_ADDR(2));
+	*d = readl(SW_SID_ADDR(3));
 }
 
 static int read_chip_sid(char* page, char** start, off_t off, int count,

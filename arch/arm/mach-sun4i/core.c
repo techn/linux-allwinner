@@ -59,6 +59,8 @@
 #include <mach/memory.h>
 #include <mach/system.h>
 #include <mach/timex.h>
+
+#include <plat/script.h>
 #include <plat/sys_config.h>
 
 /**

@@ -26,10 +26,11 @@
 #include <linux/string.h>
 #include <linux/slab.h>
 #include <linux/module.h>
-/* #include <asm/io.h> */
 #include <linux/io.h>
 #include <mach/memory.h>
 #include <mach/platform.h>
+
+#include <plat/script.h>
 #include <plat/sys_config.h>
 
 static script_sub_key_t *sw_cfg_get_subkey(const char *script_buf,

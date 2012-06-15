@@ -76,6 +76,10 @@ config SUNXI_DBGREG
 	  To compile this driver as a module, choose M here: the
 	  module will be called sun4i-dbgreg.
 
+config SUNXI_PLAT
+	tristate "Generic platform-device handler for sunxi"
+	depends on PLAT_SUNXI
+
 config ATMEL_PWM
 	tristate "Atmel AT32/AT91 PWM support"
 	depends on HAVE_CLK

@@ -26,4 +26,31 @@
 #define SYS_CONFIG_MEMBASE	(PLAT_PHYS_OFFSET + SZ_32M + SZ_16M)
 #define SYS_CONFIG_MEMSIZE	(SZ_64K)
 
+struct sunxi_script_section {
+	char name[32];
+	u32 count;
+	u32 offset;
+};
+
+struct sunxi_script_property {
+	char name[32];
+	u32 offset;
+	u32 pattern;
+};
+
+struct sunxi_script {
+	u32 count;
+	u32 version[3];
+	struct sunxi_script_section section[];
+};
+
+struct sunxi_script_gpio_value {
+	u32 port;
+	u32 port_num;
+	u32 mul_sel;
+	u32 pull;
+	u32 drv_level;
+	u32 data;
+};
+
 #endif

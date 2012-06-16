@@ -85,6 +85,10 @@ static inline struct sunxi_script_property *sunxi_script_find_property(
 	return NULL;
 }
 
+struct sunxi_script_property *sunxi_script_find_property_fmt(
+		struct sunxi_script *buf, struct sunxi_script_section *section,
+		const char *fmt, ...);
+
 static inline int sunxi_script_property_read_u32(struct sunxi_script *buf,
 				     struct sunxi_script_property *prop,
 				     u32 *val)

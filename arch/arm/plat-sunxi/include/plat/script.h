@@ -53,6 +53,24 @@ struct sunxi_script_gpio_value {
 	u32 data;
 };
 
+enum sunxi_script_property_type {
+	SUNXI_CONFIG_PROP_TYPE_INVALID = 0,
+	SUNXI_CONFIG_PROP_TYPE_U32,
+	SUNXI_CONFIG_PROP_TYPE_STRING,
+	SUNXI_CONFIG_PROP_TYPE_U32_ARRAY,
+	SUNXI_CONFIG_PROP_TYPE_GPIO,
+};
+
+static inline u32 sunxi_script_property_type(struct sunxi_script_property *o)
+{
+	return o ? (o->pattern >> 16) & 0xffff : SUNXI_CONFIG_PROP_TYPE_INVALID;
+}
+
+static inline u32 sunxi_script_property_size(struct sunxi_script_property *o)
+{
+	return o ? (o->pattern & 0xffff) << 2 : 0;
+}
+
 #define PTR(B, OFF)	(void*)((char*)(B)+((OFF)<<2))
 static inline struct sunxi_script_property *sunxi_script_find_property(
 		struct sunxi_script *buf, struct sunxi_script_section *section,
@@ -66,6 +84,19 @@ static inline struct sunxi_script_property *sunxi_script_find_property(
 
 	return NULL;
 }
+
+static inline int sunxi_script_property_read_u32(struct sunxi_script *buf,
+				     struct sunxi_script_property *prop,
+				     u32 *val)
+{
+	if (sunxi_script_property_type(prop) == SUNXI_CONFIG_PROP_TYPE_U32) {
+		u32 *v = PTR(buf, prop->offset);
+		*val = *v;
+		return 1;
+	}
+	return 0;
+}
+
 #undef PTR
 
 #endif

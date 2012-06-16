@@ -72,6 +72,30 @@ done:
 	return ret;
 }
 
+static void config_feature(struct sunxi_script *head,
+			  struct sunxi_script_section *section,
+			  const char *name, int index)
+{
+	struct sunxi_script_property *prop;
+	u32 used = 0;
+
+	prop = sunxi_script_find_property_fmt(head, section, "%s_used", name);
+	if (sunxi_script_property_read_u32(head, prop, &used)) {
+		if (index < 0)
+			pr_debug("config: [%s] -> %s used:%u\n",
+				 section->name, name, used);
+		else
+			pr_debug("config: [%s] -> %s:%d used:%u\n",
+				 section->name, name, index, used);
+	} else if (index < 0) {
+		pr_debug("config: [%s] -> %s assumed unused\n",
+			 section->name, name);
+	} else {
+		pr_debug("config: [%s] -> %s:%u assumed unused\n",
+			 section->name, name, index);
+	}
+}
+
 static int config_scan(void)
 {
 	int i;
@@ -84,14 +108,11 @@ static int config_scan(void)
 		char feature[32] = "";
 		int index = -1;
 
-		if (feature_name(section->name, feature, &index)) {
-			if (index < 0)
-				pr_debug("config: [%s] -> %s\n", section->name, feature);
-			else
-				pr_debug("config: [%s] -> %s:%d\n", section->name, feature, index);
-		} else {
+		if (feature_name(section->name, feature, &index))
+			config_feature(head, section, feature, index);
+		else
 			pr_debug("config: [%s] SKIP\n", section->name);
-		}
+
 	}
 	return 0;
 }

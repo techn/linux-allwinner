@@ -53,4 +53,19 @@ struct sunxi_script_gpio_value {
 	u32 data;
 };
 
+#define PTR(B, OFF)	(void*)((char*)(B)+((OFF)<<2))
+static inline struct sunxi_script_property *sunxi_script_find_property(
+		struct sunxi_script *buf, struct sunxi_script_section *section,
+		const char *name)
+{
+	int i;
+	struct sunxi_script_property *prop = PTR(buf, section->offset);
+	for (i = section->count; i--; prop++)
+		if (strncmp(name, prop->name, sizeof(prop->name)) == 0)
+			return prop;
+
+	return NULL;
+}
+#undef PTR
+
 #endif

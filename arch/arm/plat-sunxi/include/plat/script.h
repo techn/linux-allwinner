@@ -61,17 +61,41 @@ enum sunxi_script_property_type {
 	SUNXI_CONFIG_PROP_TYPE_GPIO,
 };
 
+/**
+ * sunxi_script_property_type() - get type of a property
+ */
 static inline u32 sunxi_script_property_type(struct sunxi_script_property *o)
 {
 	return o ? (o->pattern >> 16) & 0xffff : SUNXI_CONFIG_PROP_TYPE_INVALID;
 }
 
+/**
+ * sunxi_script_property_size() - get size of a property in bytes
+ */
 static inline u32 sunxi_script_property_size(struct sunxi_script_property *o)
 {
 	return o ? (o->pattern & 0xffff) << 2 : 0;
 }
 
 #define PTR(B, OFF)	(void*)((char*)(B)+((OFF)<<2))
+/**
+ * sunxi_script_find_section() - search for a section by name
+ */
+static inline struct sunxi_script_section *sunxi_script_find_section(
+		struct sunxi_script *buf, const char *name)
+{
+	int i;
+	struct sunxi_script_section *section = buf->section;
+	for (i = buf->count; i--; section++)
+		if (strncmp(name, section->name, sizeof(section->name)) == 0)
+			return section;
+
+	return NULL;
+}
+
+/**
+ * sunxi_script_find_property() - search for a property by name in a section
+ */
 static inline struct sunxi_script_property *sunxi_script_find_property(
 		struct sunxi_script *buf, struct sunxi_script_section *section,
 		const char *name)
@@ -85,10 +109,31 @@ static inline struct sunxi_script_property *sunxi_script_find_property(
 	return NULL;
 }
 
+/**
+ * sunxi_script_find_property2() - search for a (section, property) by name
+ */
+static inline struct sunxi_script_property *sunxi_script_find_property2(
+		struct sunxi_script *buf, const char *name_s,
+		const char *name_p)
+{
+	struct sunxi_script_section *section;
+	struct sunxi_script_property *prop = NULL;
+	section = sunxi_script_find_section(buf, name_s);
+	if (section)
+		prop = sunxi_script_find_property(buf, section, name_p);
+	return prop;
+}
+
+/**
+ * sunxi_script_find_property_fmt() - search for a property using a formated name
+ */
 struct sunxi_script_property *sunxi_script_find_property_fmt(
 		struct sunxi_script *buf, struct sunxi_script_section *section,
 		const char *fmt, ...);
 
+/**
+ * sunxi_script_property_read_u32() - read value of u32 type property
+ */
 static inline int sunxi_script_property_read_u32(struct sunxi_script *buf,
 				     struct sunxi_script_property *prop,
 				     u32 *val)

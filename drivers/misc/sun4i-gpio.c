@@ -38,7 +38,7 @@
 struct sun4i_gpio_data {
 	int status;
 	unsigned gpio_handler;
-	script_gpio_set_t info;
+	struct user_gpio_set info;
 	char name[8];
 #ifdef CONFIG_HAS_EARLYSUSPEND
 	struct early_suspend early_suspend;
@@ -210,7 +210,7 @@ static int __init sun4i_gpio_init(void) {
 		sun4i_gpio_dbg("pin:%s\n", pin);
 
 		err = script_parser_fetch("gpio_para", pin,
-					(int *)&gpio_i->info, sizeof(script_gpio_set_t));
+					(int *)&gpio_i->info, sizeof(struct user_gpio_set));
 
 		if(err) {
 			pr_err("%s script_parser_fetch \"gpio_para\" \"%s\" error\n", __FUNCTION__, pin);

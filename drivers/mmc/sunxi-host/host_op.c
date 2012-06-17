@@ -182,8 +182,8 @@ static int sunximmc_resource_release(struct sunxi_mmc_host *smc_host)
 static inline void sunximmc_suspend_pins(struct sunxi_mmc_host* smc_host)
 {
     int ret;
-    user_gpio_set_t suspend_gpio_set = {"suspend_pins_sdio", 0, 0, 0, 2, 1, 0};     //for sdio
-    user_gpio_set_t suspend_gpio_set_card = {"suspend_pins_mmc", 0, 0, 0, 0, 1, 0};    //for mmc card
+    struct user_gpio_set suspend_gpio_set = {"suspend_pins_sdio", 0, 0, 0, 2, 1, 0};     //for sdio
+    struct user_gpio_set suspend_gpio_set_card = {"suspend_pins_mmc", 0, 0, 0, 0, 1, 0};    //for mmc card
     u32 i;
 
     SMC_DBG("mmc %d suspend pins\n", smc_host->pdev->id);
@@ -239,7 +239,7 @@ static inline void sunximmc_suspend_pins(struct sunxi_mmc_host* smc_host)
     }
 
 //    {
-//        user_gpio_set_t post_cfg[6];
+//        struct user_gpio_set post_cfg[6];
 //
 //        gpio_get_all_pin_status(smc_host->pio_hdle, post_cfg, 6, 1);
 //        for (i=0; i<6; i++)

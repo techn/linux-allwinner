@@ -144,7 +144,7 @@ struct sunxi_mmc_host {
 
 	/* backup register structrue */
 	struct sunximmc_ctrl_regs   bak_regs;
-	user_gpio_set_t             bak_gpios[6];
+	struct user_gpio_set        bak_gpios[6];
 	u32                         gpio_suspend_ok;
 };
 

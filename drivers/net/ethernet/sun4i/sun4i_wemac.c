@@ -137,7 +137,7 @@ typedef struct wemac_board_info {
 	struct mii_if_info mii;
 	u32		msg_enable;
 #if PHY_POWER
-	user_gpio_set_t *mos_gpio;
+	struct user_gpio_set *mos_gpio;
 	u32 mos_pin_handler;
 #endif
 } wemac_board_info_t;
@@ -1799,13 +1799,13 @@ static int __devinit wemac_probe(struct platform_device *pdev)
 	}
 
 #if PHY_POWER
-	db->mos_gpio = kmalloc(sizeof(user_gpio_set_t), GFP_KERNEL);
+	db->mos_gpio = kmalloc(sizeof(struct user_gpio_set), GFP_KERNEL);
 	db->mos_pin_handler = 0;
 	if(NULL == db->mos_gpio){
 		printk(KERN_ERR "can't request memory for mos_gpio\n");
 	}else{
 		if(SCRIPT_PARSER_OK != script_parser_fetch("emac_para", "emac_power",
-					(int *)(db->mos_gpio), sizeof(user_gpio_set_t)/sizeof(int))){
+					(int *)(db->mos_gpio), sizeof(struct user_gpio_set)/sizeof(int))){
 			printk(KERN_ERR "can't get information emac_power gpio\n");
 		}else{
 			db->mos_pin_handler = gpio_request(db->mos_gpio, 1);

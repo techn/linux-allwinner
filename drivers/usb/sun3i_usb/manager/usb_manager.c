@@ -245,7 +245,7 @@ static void modify_usb_borad_info(struct usb_cfg *cfg)
 	return;
 }
 
-static void print_gpio_set(user_gpio_set_t *gpio_set)
+static void print_gpio_set(struct user_gpio_set *gpio_set)
 {
 	DMSG_DBG_MANAGER("gpio_name            = %s\n", gpio_set->gpio_name);
 	DMSG_DBG_MANAGER("port                 = %x\n", gpio_set->port);

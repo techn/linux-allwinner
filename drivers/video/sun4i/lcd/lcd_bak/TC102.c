@@ -148,7 +148,7 @@ static __s32 LCD_close_flow(__u32 sel)
 
 static void LCD_vcc_on(__u32 sel)
 {
-    user_gpio_set_t gpio_list;
+    struct user_gpio_set gpio_list;
     int hdl;
 
     gpio_list.port = 8;// 1:A; 2:B; 3:C; 4:d;5:e;6:f;7:g;8:h.....
@@ -164,7 +164,7 @@ static void LCD_vcc_on(__u32 sel)
 
 static void LCD_vcc_off(__u32 sel)
 {
-    user_gpio_set_t gpio_list;
+    struct user_gpio_set gpio_list;
     int hdl;
 
     gpio_list.port = 8;// 1:A; 2:B; 3:C;.....

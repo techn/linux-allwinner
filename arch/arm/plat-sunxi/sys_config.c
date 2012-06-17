@@ -33,23 +33,23 @@
 #include <plat/script.h>
 #include <plat/sys_config.h>
 
-static script_sub_key_t *sw_cfg_get_subkey(const char *script_buf,
+static struct sunxi_script_property *sw_cfg_get_subkey(const char *script_buf,
 				    const char *main_key, const char *sub_key)
 {
-	script_head_t *hd = (script_head_t *)script_buf;
-	script_main_key_t *mk = (script_main_key_t *)(hd + 1);
-	script_sub_key_t *sk = NULL;
+	struct sunxi_script *hd = (struct sunxi_script *)script_buf;
+	struct sunxi_script_section *mk = (struct sunxi_script_section *)(hd + 1);
+	struct sunxi_script_property *sk = NULL;
 	int i, j;
 
-	for (i = 0; i < hd->main_key_count; i++) {
-		if (strcmp(main_key, mk->main_name)) {
+	for (i = 0; i < hd->count; i++) {
+		if (strcmp(main_key, mk->name)) {
 			mk++;
 			continue;
 		}
 
-		for (j = 0; j < mk->lenth; j++) {
-			sk = (script_sub_key_t *)(script_buf + (mk->offset<<2) + j * sizeof(script_sub_key_t));
-			if (!strcmp(sub_key, sk->sub_name))
+		for (j = 0; j < mk->count; j++) {
+			sk = (struct sunxi_script_property *)(script_buf + (mk->offset<<2) + j * sizeof(struct sunxi_script_property));
+			if (!strcmp(sub_key, sk->name))
 				return sk;
 		}
 	}
@@ -59,7 +59,7 @@ static script_sub_key_t *sw_cfg_get_subkey(const char *script_buf,
 int sw_cfg_get_int(const char *script_buf, const char *main_key,
 		   const char *sub_key)
 {
-	script_sub_key_t *sk = NULL;
+	struct sunxi_script_property *sk = NULL;
 	char *pdata;
 	int value;
 
@@ -79,7 +79,7 @@ int sw_cfg_get_int(const char *script_buf, const char *main_key,
 char *sw_cfg_get_str(const char *script_buf, const char *main_key,
 		     const char *sub_key, char *buf)
 {
-	script_sub_key_t *sk = NULL;
+	struct sunxi_script_property *sk = NULL;
 	char *pdata;
 
 	sk = sw_cfg_get_subkey(script_buf, main_key, sub_key);
@@ -118,14 +118,14 @@ static  int   _test_str_length(char *str)
 
 int script_parser_init(char *script_buf)
 {
-	script_head_t   *script_head;
+	struct sunxi_script *script_head;
 
 	pr_debug("%s(%d)-%s, script_buf addr is %p:\n", __FILE__, __LINE__, __func__, script_buf);
 	if (script_buf) {
 		script_mod_buf = script_buf;
-		script_head = (script_head_t *)script_mod_buf;
+		script_head = (struct sunxi_script *)script_mod_buf;
 
-		script_main_key_count = script_head->main_key_count;
+		script_main_key_count = script_head->count;
 
 		pr_debug("succeed: %s(%d)-%s\n", __FILE__, __LINE__, __func__);
 		return SCRIPT_PARSER_OK;
@@ -147,8 +147,8 @@ int script_parser_fetch(char *main_name, char *sub_name, int value[], int count)
 {
 	char   main_bkname[32], sub_bkname[32];
 	char   *main_char, *sub_char;
-	script_main_key_t  *main_key = NULL;
-	script_sub_key_t   *sub_key = NULL;
+	struct sunxi_script_section  *main_key = NULL;
+	struct sunxi_script_property   *sub_key = NULL;
 	int    i, j;
 	int    pattern, word_count;
 
@@ -180,14 +180,14 @@ int script_parser_fetch(char *main_name, char *sub_name, int value[], int count)
 	pr_debug("gpio: main name is : %s, sub_name is: %s", main_char, sub_char);
 
 	for (i = 0; i < script_main_key_count; i++) {
-		main_key = (script_main_key_t *)(script_mod_buf + (sizeof(script_head_t)) + i * sizeof(script_main_key_t));
-		if (strcmp(main_key->main_name, main_char))
+		main_key = (struct sunxi_script_section *)(script_mod_buf + (sizeof(struct sunxi_script)) + i * sizeof(struct sunxi_script_section));
+		if (strcmp(main_key->name, main_char))
 			continue;
 
 		/* now find sub key */
-		for (j = 0; j < main_key->lenth; j++) {
-			sub_key = (script_sub_key_t *)(script_mod_buf + (main_key->offset<<2) + (j * sizeof(script_sub_key_t)));
-			if (strcmp(sub_key->sub_name, sub_char))
+		for (j = 0; j < main_key->count; j++) {
+			sub_key = (struct sunxi_script_property *)(script_mod_buf + (main_key->offset<<2) + (j * sizeof(struct sunxi_script_property)));
+			if (strcmp(sub_key->name, sub_char))
 				continue;
 
 		pattern    = (sub_key->pattern>>16) & 0xffff; /* get datatype */
@@ -210,13 +210,13 @@ int script_parser_fetch(char *main_name, char *sub_name, int value[], int count)
 			break;
 		case SCRIPT_PARSER_VALUE_TYPE_GPIO_WORD:
 		{
-			script_gpio_set_t  *user_gpio_cfg = (script_gpio_set_t *)value;
+			struct user_gpio_set  *user_gpio_cfg = (struct user_gpio_set *)value;
 			/* buffer space enough? */
-			if (sizeof(script_gpio_set_t) > (count << 2))
+			if (sizeof(struct user_gpio_set) > (count << 2))
 				return SCRIPT_PARSER_BUFFER_NOT_ENOUGH;
 
 			strcpy(user_gpio_cfg->gpio_name, sub_char);
-			memcpy(&user_gpio_cfg->port, script_mod_buf + (sub_key->offset<<2),  sizeof(script_gpio_set_t) - 32);
+			memcpy(&user_gpio_cfg->port, script_mod_buf + (sub_key->offset<<2),  sizeof(struct user_gpio_set) - 32);
 			break;
 		}
 		}
@@ -229,15 +229,15 @@ int script_parser_fetch(char *main_name, char *sub_name, int value[], int count)
 }
 EXPORT_SYMBOL(script_parser_fetch);
 
-int script_parser_fetch_ex(char *main_name, char *sub_name, int value[], script_parser_value_type_t *type, int count)
+int script_parser_fetch_ex(char *main_name, char *sub_name, int value[], enum script_parser_value_type *type, int count)
 {
 	char   main_bkname[32], sub_bkname[32];
 	char   *main_char, *sub_char;
-	script_main_key_t  *main_key = NULL;
-	script_sub_key_t   *sub_key = NULL;
+	struct sunxi_script_section  *main_key = NULL;
+	struct sunxi_script_property   *sub_key = NULL;
 	int    i, j;
 	int    pattern, word_count;
-	script_parser_value_type_t *value_type = type;
+	enum script_parser_value_type *value_type = type;
 
 	pr_debug("enter script parse fetch.\n");
 
@@ -265,13 +265,13 @@ int script_parser_fetch_ex(char *main_name, char *sub_name, int value[], script_
 	pr_debug("gpio: main name is : %s, sub_name is: %s", main_char, sub_char);
 
 	for (i = 0; i < script_main_key_count; i++) {
-		main_key = (script_main_key_t *)(script_mod_buf + (sizeof(script_head_t)) + i * sizeof(script_main_key_t));
-		if (strcmp(main_key->main_name, main_char))
+		main_key = (struct sunxi_script_section *)(script_mod_buf + (sizeof(struct sunxi_script)) + i * sizeof(struct sunxi_script_section));
+		if (strcmp(main_key->name, main_char))
 			continue;
 
-		for (j = 0; j < main_key->lenth; j++) {
-			sub_key = (script_sub_key_t *)(script_mod_buf + (main_key->offset<<2) + (j * sizeof(script_sub_key_t)));
-		if (strcmp(sub_key->sub_name, sub_char))
+		for (j = 0; j < main_key->count; j++) {
+			sub_key = (struct sunxi_script_property *)(script_mod_buf + (main_key->offset<<2) + (j * sizeof(struct sunxi_script_property)));
+		if (strcmp(sub_key->name, sub_char))
 			continue;
 
 		pattern    = (sub_key->pattern>>16) & 0xffff;
@@ -297,13 +297,13 @@ int script_parser_fetch_ex(char *main_name, char *sub_name, int value[], script_
 			break;
 		case SCRIPT_PARSER_VALUE_TYPE_GPIO_WORD:
 			{
-				script_gpio_set_t  *user_gpio_cfg = (script_gpio_set_t *)value;
+				struct user_gpio_set  *user_gpio_cfg = (struct user_gpio_set *)value;
 
-				if (sizeof(script_gpio_set_t) > (count<<2))
+				if (sizeof(struct user_gpio_set) > (count<<2))
 					return SCRIPT_PARSER_BUFFER_NOT_ENOUGH;
 
 				strcpy(user_gpio_cfg->gpio_name, sub_char);
-				memcpy(&user_gpio_cfg->port, script_mod_buf + (sub_key->offset<<2),  sizeof(script_gpio_set_t) - 32);
+				memcpy(&user_gpio_cfg->port, script_mod_buf + (sub_key->offset<<2),  sizeof(struct user_gpio_set) - 32);
 				*value_type = SCRIPT_PARSER_VALUE_TYPE_GPIO_WORD;
 				break;
 			}
@@ -321,7 +321,7 @@ int script_parser_subkey_count(char *main_name)
 {
 	char   main_bkname[32];
 	char   *main_char;
-	script_main_key_t  *main_key = NULL;
+	struct sunxi_script_section  *main_key = NULL;
 	int    i;
 
 	if (!script_mod_buf)
@@ -338,11 +338,11 @@ int script_parser_subkey_count(char *main_name)
 	}
 
 	for (i = 0; i < script_main_key_count; i++) {
-		main_key = (script_main_key_t *)(script_mod_buf + (sizeof(script_head_t)) + i * sizeof(script_main_key_t));
-		if (strcmp(main_key->main_name, main_char))
+		main_key = (struct sunxi_script_section *)(script_mod_buf + (sizeof(struct sunxi_script)) + i * sizeof(struct sunxi_script_section));
+		if (strcmp(main_key->name, main_char))
 			continue;
 
-		return main_key->lenth;
+		return main_key->count;
 	}
 
 	return -1;
@@ -360,8 +360,8 @@ int script_parser_mainkey_get_gpio_count(char *main_name)
 {
 	char   main_bkname[32];
 	char   *main_char;
-	script_main_key_t  *main_key = NULL;
-	script_sub_key_t   *sub_key = NULL;
+	struct sunxi_script_section  *main_key = NULL;
+	struct sunxi_script_property   *sub_key = NULL;
 	int    i, j;
 	int    pattern, gpio_count = 0;
 
@@ -379,12 +379,12 @@ int script_parser_mainkey_get_gpio_count(char *main_name)
 	}
 
 	for (i = 0; i < script_main_key_count; i++) {
-		main_key = (script_main_key_t *)(script_mod_buf + (sizeof(script_head_t)) + i * sizeof(script_main_key_t));
-		if (strcmp(main_key->main_name, main_char))
+		main_key = (struct sunxi_script_section *)(script_mod_buf + (sizeof(struct sunxi_script)) + i * sizeof(struct sunxi_script_section));
+		if (strcmp(main_key->name, main_char))
 			continue;
 
-		for (j = 0; j < main_key->lenth; j++) {
-			sub_key = (script_sub_key_t *)(script_mod_buf + (main_key->offset<<2) + (j * sizeof(script_sub_key_t)));
+		for (j = 0; j < main_key->count; j++) {
+			sub_key = (struct sunxi_script_property *)(script_mod_buf + (main_key->offset<<2) + (j * sizeof(struct sunxi_script_property)));
 
 			pattern    = (sub_key->pattern>>16) & 0xffff;
 
@@ -400,9 +400,9 @@ int script_parser_mainkey_get_gpio_cfg(char *main_name, void *gpio_cfg, int gpio
 {
 	char   main_bkname[32];
 	char   *main_char;
-	script_main_key_t  *main_key = NULL;
-	script_sub_key_t   *sub_key = NULL;
-	script_gpio_set_t  *user_gpio_cfg = (script_gpio_set_t *)gpio_cfg;
+	struct sunxi_script_section  *main_key = NULL;
+	struct sunxi_script_property   *sub_key = NULL;
+	struct user_gpio_set  *user_gpio_cfg = (struct user_gpio_set *)gpio_cfg;
 	int    i, j;
 	int    pattern, user_index;
 
@@ -412,7 +412,7 @@ int script_parser_mainkey_get_gpio_cfg(char *main_name, void *gpio_cfg, int gpio
 	if (main_name == NULL)
 		return SCRIPT_PARSER_KEYNAME_NULL;
 
-	memset(user_gpio_cfg, 0, sizeof(script_gpio_set_t) * gpio_count);
+	memset(user_gpio_cfg, 0, sizeof(struct user_gpio_set) * gpio_count);
 
 	main_char = main_name;
 	if (_test_str_length(main_name) > 31) {
@@ -422,21 +422,21 @@ int script_parser_mainkey_get_gpio_cfg(char *main_name, void *gpio_cfg, int gpio
 	}
 
 	for (i = 0; i < script_main_key_count; i++) {
-		main_key = (script_main_key_t *)(script_mod_buf + (sizeof(script_head_t)) + i * sizeof(script_main_key_t));
-		if (strcmp(main_key->main_name, main_char))
+		main_key = (struct sunxi_script_section *)(script_mod_buf + (sizeof(struct sunxi_script)) + i * sizeof(struct sunxi_script_section));
+		if (strcmp(main_key->name, main_char))
 			continue;
 
-		pr_debug("mainkey name = %s\n", main_key->main_name);
+		pr_debug("mainkey name = %s\n", main_key->name);
 		user_index = 0;
-		for (j = 0; j < main_key->lenth; j++) {
-			sub_key = (script_sub_key_t *)(script_mod_buf + (main_key->offset<<2) + (j * sizeof(script_sub_key_t)));
-			pr_debug("subkey name = %s\n", sub_key->sub_name);
+		for (j = 0; j < main_key->count; j++) {
+			sub_key = (struct sunxi_script_property *)(script_mod_buf + (main_key->offset<<2) + (j * sizeof(struct sunxi_script_property)));
+			pr_debug("subkey name = %s\n", sub_key->name);
 			pattern    = (sub_key->pattern>>16) & 0xffff;
 			pr_debug("subkey pattern = %d\n", pattern);
 
 			if (SCRIPT_PARSER_VALUE_TYPE_GPIO_WORD == pattern) {
-				strcpy(user_gpio_cfg[user_index].gpio_name, sub_key->sub_name);
-				memcpy(&user_gpio_cfg[user_index].port, script_mod_buf + (sub_key->offset<<2), sizeof(script_gpio_set_t) - 32);
+				strcpy(user_gpio_cfg[user_index].gpio_name, sub_key->name);
+				memcpy(&user_gpio_cfg[user_index].port, script_mod_buf + (sub_key->offset<<2), sizeof(struct user_gpio_set) - 32);
 				user_index++;
 				if (user_index >= gpio_count)
 					break;
@@ -543,11 +543,11 @@ __s32 gpio_exit(void)
  *
  *
  */
-u32 gpio_request(user_gpio_set_t *gpio_list, __u32 group_count_max)
+u32 gpio_request(struct user_gpio_set *gpio_list, __u32 group_count_max)
 {
 	char               *user_gpio_buf;	/* 按照char类型申请 */
 	system_gpio_set_t  *user_gpio_set, *tmp_sys_gpio_data;	/* user_gpio_set将是申请内存的句柄 */
-	user_gpio_set_t  *tmp_user_gpio_data;
+	struct user_gpio_set  *tmp_user_gpio_data;
 	__u32                real_gpio_count = 0, first_port;	/* 保存真正有效的GPIO的个数 */
 	__u32               tmp_group_func_data = 0;
 	__u32               tmp_group_pull_data = 0;
@@ -740,8 +740,8 @@ EXPORT_SYMBOL_GPL(gpio_request);
  */
 u32 gpio_request_ex(char *main_name, const char *sub_name)	/* 设备申请GPIO函数扩展接口 */
 {
-	user_gpio_set_t    *gpio_list = NULL;
-	user_gpio_set_t     one_gpio = {"", 0};
+	struct user_gpio_set    *gpio_list = NULL;
+	struct user_gpio_set     one_gpio = {"", 0};
 	__u32               gpio_handle;
 	__s32               gpio_count;
 
@@ -751,7 +751,7 @@ u32 gpio_request_ex(char *main_name, const char *sub_name)	/* 设备申请GPIO�
 			printk(KERN_ERR "gpio count < =0 ,gpio_count is: %d\n", gpio_count);
 			return 0;
 		}
-		gpio_list = (user_gpio_set_t *)CSP_OSAL_MALLOC(sizeof(system_gpio_set_t) * gpio_count);		/* 申请一片临时内存，用于保存用户数据 */
+		gpio_list = (struct user_gpio_set *)CSP_OSAL_MALLOC(sizeof(system_gpio_set_t) * gpio_count);		/* 申请一片临时内存，用于保存用户数据 */
 		if (!gpio_list) {
 			printk(KERN_ERR "malloc gpio_list error\n");
 			return 0;
@@ -763,7 +763,7 @@ u32 gpio_request_ex(char *main_name, const char *sub_name)	/* 设备申请GPIO�
 			return 0;
 		}
 	} else {
-		if (script_parser_fetch((char *)main_name, (char *)sub_name, (int *)&one_gpio, (sizeof(user_gpio_set_t) >> 2)) < 0) {
+		if (script_parser_fetch((char *)main_name, (char *)sub_name, (int *)&one_gpio, (sizeof(struct user_gpio_set) >> 2)) < 0) {
 			printk(KERN_ERR "script parser fetch err.\n");
 			return 0;
 		}
@@ -905,13 +905,13 @@ EXPORT_SYMBOL(gpio_release);
  *  if_get_user_set_flag   :   读取标志，表示读取用户设定数据或者是实际数据
  */
 __s32  gpio_get_all_pin_status(u32 p_handler,
-			    user_gpio_set_t *gpio_status, __u32 gpio_count_max,
+			    struct user_gpio_set *gpio_status, __u32 gpio_count_max,
 			    __u32 if_get_from_hardware)
 {
 	char               *tmp_buf;			    /* 转换成char类型 */
 	__u32               group_count_max, first_port;    /* 最大GPIO个数 */
 	system_gpio_set_t  *user_gpio_set, *tmp_sys_gpio_data;
-	user_gpio_set_t  *script_gpio;
+	struct user_gpio_set  *script_gpio;
 	__u32               port_num_func, port_num_pull;
 	volatile __u32     *tmp_group_func_addr = NULL, *tmp_group_pull_addr;
 	volatile __u32     *tmp_group_data_addr, *tmp_group_dlevel_addr;
@@ -1020,7 +1020,7 @@ EXPORT_SYMBOL(gpio_get_all_pin_status);
  *  gpio_name    :    要操作的GPIO的名称
  *  if_get_user_set_flag   :   读取标志，表示读取用户设定数据或者是实际数据
  */
-__s32  gpio_get_one_pin_status(u32 p_handler, user_gpio_set_t *gpio_status, const char *gpio_name, __u32 if_get_from_hardware)
+__s32  gpio_get_one_pin_status(u32 p_handler, struct user_gpio_set *gpio_status, const char *gpio_name, __u32 if_get_from_hardware)
 {
 	char               *tmp_buf;				/* 转换成char类型 */
 	__u32               group_count_max;			/* 最大GPIO个数 */
@@ -1093,13 +1093,13 @@ EXPORT_SYMBOL(gpio_get_one_pin_status);
  *  if_get_user_set_flag   :   读取标志，表示读取用户设定数据或者是实际数据
  */
 
-__s32  gpio_set_one_pin_status(u32 p_handler, user_gpio_set_t *gpio_status,
+__s32  gpio_set_one_pin_status(u32 p_handler, struct user_gpio_set *gpio_status,
 		    const char *gpio_name, __u32 if_set_to_current_input_status)
 {
 	char               *tmp_buf;			/* 转换成char类型 */
 	__u32               group_count_max;		/* 最大GPIO个数 */
 	system_gpio_set_t  *user_gpio_set, *tmp_sys_gpio_data;
-	user_gpio_set_t     script_gpio;
+	struct user_gpio_set     script_gpio;
 	volatile __u32     *tmp_addr;
 	__u32               port_num_func, port_num_pull;
 	__u32               port, port_num;

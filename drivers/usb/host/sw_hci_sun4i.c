@@ -707,7 +707,7 @@ static void hci_port_configure(struct sw_hci_hcd *sw_hci, u32 enable)
 *
 *******************************************************************************
 */
-static u32 alloc_pin(user_gpio_set_t *gpio_list)
+static u32 alloc_pin(struct user_gpio_set *gpio_list)
 {
     u32 pin_handle = 0;
 

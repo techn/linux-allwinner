@@ -71,19 +71,19 @@ typedef struct
     __bool                  lcd_used;
 
 	__bool                  lcd_bl_en_used;
-	user_gpio_set_t         lcd_bl_en;
+	struct user_gpio_set         lcd_bl_en;
 
 	__bool                  lcd_power_used;
-	user_gpio_set_t         lcd_power;
+	struct user_gpio_set         lcd_power;
 
 	__bool                  lcd_pwm_used;
-	user_gpio_set_t         lcd_pwm;
+	struct user_gpio_set         lcd_pwm;
 
 	__bool                  lcd_gpio_used[4];
-    user_gpio_set_t         lcd_gpio[4];
+    struct user_gpio_set         lcd_gpio[4];
 
     __bool                  lcd_io_used[28];
-    user_gpio_set_t         lcd_io[28];
+    struct user_gpio_set         lcd_io[28];
 }__disp_lcd_cfg_t;
 
 typedef struct

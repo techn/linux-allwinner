@@ -22,7 +22,7 @@
 
 #include "OSAL_Pin.h"
 
-__hdle OSAL_GPIO_Request(user_gpio_set_t *gpio_list, __u32 group_count_max)
+__hdle OSAL_GPIO_Request(struct user_gpio_set *gpio_list, __u32 group_count_max)
 {
     //__inf("OSAL_GPIO_Request, port:%d, port_num:%d, mul_sel:%d, pull:%d, drv_level:%d, data:%d\n", gpio_list->port, gpio_list->port_num, gpio_list->mul_sel, gpio_list->pull, gpio_list->drv_level, gpio_list->data);
 
@@ -45,17 +45,17 @@ __s32 OSAL_GPIO_Release(__hdle p_handler, __s32 if_release_to_default_status)
     return 0;
 }
 
-__s32 OSAL_GPIO_DevGetAllPins_Status(unsigned p_handler, user_gpio_set_t *gpio_status, unsigned gpio_count_max, unsigned if_get_from_hardware)
+__s32 OSAL_GPIO_DevGetAllPins_Status(unsigned p_handler, struct user_gpio_set *gpio_status, unsigned gpio_count_max, unsigned if_get_from_hardware)
 {
     return gpio_get_all_pin_status(p_handler, gpio_status, gpio_count_max, if_get_from_hardware);
 }
 
-__s32 OSAL_GPIO_DevGetONEPins_Status(unsigned p_handler, user_gpio_set_t *gpio_status,const char *gpio_name,unsigned if_get_from_hardware)
+__s32 OSAL_GPIO_DevGetONEPins_Status(unsigned p_handler, struct user_gpio_set *gpio_status,const char *gpio_name,unsigned if_get_from_hardware)
 {
     return gpio_get_one_pin_status(p_handler, gpio_status,gpio_name,if_get_from_hardware);
 }
 
-__s32 OSAL_GPIO_DevSetONEPin_Status(u32 p_handler, user_gpio_set_t *gpio_status, const char *gpio_name, __u32 if_set_to_current_input_status)
+__s32 OSAL_GPIO_DevSetONEPin_Status(u32 p_handler, struct user_gpio_set *gpio_status, const char *gpio_name, __u32 if_set_to_current_input_status)
 {
     return gpio_set_one_pin_status(p_handler, gpio_status, gpio_name, if_set_to_current_input_status);
 }

@@ -578,7 +578,7 @@ void LCD_get_sys_config(__u32 sel, __disp_lcd_cfg_t *lcd_cfg)
     char io_name[28][20] = {"lcdd0", "lcdd1", "lcdd2", "lcdd3", "lcdd4", "lcdd5", "lcdd6", "lcdd7", "lcdd8", "lcdd9", "lcdd10", "lcdd11",
                          "lcdd12", "lcdd13", "lcdd14", "lcdd15", "lcdd16", "lcdd17", "lcdd18", "lcdd19", "lcdd20", "lcdd21", "lcdd22",
                          "lcdd23", "lcdclk", "lcdde", "lcdhsync", "lcdvsync"};
-    user_gpio_set_t  *gpio_info;
+    struct user_gpio_set  *gpio_info;
     int  value = 1;
     char primary_key[20];
     int i = 0;
@@ -611,7 +611,7 @@ void LCD_get_sys_config(__u32 sel, __disp_lcd_cfg_t *lcd_cfg)
     else
     {
         gpio_info = &(lcd_cfg->lcd_bl_en);
-        ret = OSAL_Script_FetchParser_Data(primary_key,"lcd_bl_en", (int *)gpio_info, sizeof(user_gpio_set_t)/sizeof(int));
+        ret = OSAL_Script_FetchParser_Data(primary_key,"lcd_bl_en", (int *)gpio_info, sizeof(struct user_gpio_set)/sizeof(int));
         if(ret < 0)
         {
             DE_INF("%s.lcd_bl_en not exist\n", primary_key);
@@ -634,7 +634,7 @@ void LCD_get_sys_config(__u32 sel, __disp_lcd_cfg_t *lcd_cfg)
     else
     {
         gpio_info = &(lcd_cfg->lcd_power);
-        ret = OSAL_Script_FetchParser_Data(primary_key,"lcd_power", (int *)gpio_info, sizeof(user_gpio_set_t)/sizeof(int));
+        ret = OSAL_Script_FetchParser_Data(primary_key,"lcd_power", (int *)gpio_info, sizeof(struct user_gpio_set)/sizeof(int));
         if(ret < 0)
         {
             DE_INF("%s.lcd_power not exist\n", primary_key);
@@ -657,7 +657,7 @@ void LCD_get_sys_config(__u32 sel, __disp_lcd_cfg_t *lcd_cfg)
     else
     {
         gpio_info = &(lcd_cfg->lcd_pwm);
-        ret = OSAL_Script_FetchParser_Data(primary_key,"lcd_pwm", (int *)gpio_info, sizeof(user_gpio_set_t)/sizeof(int));
+        ret = OSAL_Script_FetchParser_Data(primary_key,"lcd_pwm", (int *)gpio_info, sizeof(struct user_gpio_set)/sizeof(int));
         if(ret < 0)
         {
             DE_INF("%s.lcd_pwm not exist\n", primary_key);
@@ -676,7 +676,7 @@ void LCD_get_sys_config(__u32 sel, __disp_lcd_cfg_t *lcd_cfg)
         sprintf(sub_name, "lcd_gpio_%d", i);
 
         gpio_info = &(lcd_cfg->lcd_gpio[i]);
-        ret = OSAL_Script_FetchParser_Data(primary_key,sub_name, (int *)gpio_info, sizeof(user_gpio_set_t)/sizeof(int));
+        ret = OSAL_Script_FetchParser_Data(primary_key,sub_name, (int *)gpio_info, sizeof(struct user_gpio_set)/sizeof(int));
         if(ret < 0)
         {
             DE_INF("%s.%s not exist\n",primary_key, sub_name);
@@ -694,7 +694,7 @@ void LCD_get_sys_config(__u32 sel, __disp_lcd_cfg_t *lcd_cfg)
     for(i=0; i<28; i++)
     {
         gpio_info = &(lcd_cfg->lcd_io[i]);
-        ret = OSAL_Script_FetchParser_Data(primary_key,io_name[i], (int *)gpio_info, sizeof(user_gpio_set_t)/sizeof(int));
+        ret = OSAL_Script_FetchParser_Data(primary_key,io_name[i], (int *)gpio_info, sizeof(struct user_gpio_set)/sizeof(int));
         if(ret < 0)
         {
             DE_INF("%s.%s not exist\n",primary_key, io_name[i]);
@@ -811,9 +811,9 @@ __s32 pwm_enable(__u32 channel, __bool b_en)
 
     if(gdisp.screen[channel].lcd_cfg.lcd_pwm_used)
     {
-        user_gpio_set_t  gpio_info[1];
+        struct user_gpio_set  gpio_info[1];
 
-        memcpy(gpio_info, &(gdisp.screen[channel].lcd_cfg.lcd_pwm), sizeof(user_gpio_set_t));
+        memcpy(gpio_info, &(gdisp.screen[channel].lcd_cfg.lcd_pwm), sizeof(struct user_gpio_set));
 
         if(b_en)
         {
@@ -973,10 +973,10 @@ __s32 LCD_PWM_EN(__u32 sel, __bool b_en)
 {
     if(gdisp.screen[sel].lcd_cfg.lcd_pwm_used)
     {
-        user_gpio_set_t  gpio_info[1];
+        struct user_gpio_set  gpio_info[1];
         __hdle hdl;
 
-        memcpy(gpio_info, &(gdisp.screen[sel].lcd_cfg.lcd_pwm), sizeof(user_gpio_set_t));
+        memcpy(gpio_info, &(gdisp.screen[sel].lcd_cfg.lcd_pwm), sizeof(struct user_gpio_set));
 
         if((OSAL_sw_get_ic_ver() != 0xA) && (gpanel_info[sel].lcd_pwm_not_used == 0))
         {
@@ -1015,12 +1015,12 @@ __s32 LCD_PWM_EN(__u32 sel, __bool b_en)
 
 __s32 LCD_BL_EN(__u32 sel, __bool b_en)
 {
-    user_gpio_set_t  gpio_info[1];
+    struct user_gpio_set  gpio_info[1];
     __hdle hdl;
 
     if(gdisp.screen[sel].lcd_cfg.lcd_bl_en_used)
     {
-        memcpy(gpio_info, &(gdisp.screen[sel].lcd_cfg.lcd_bl_en), sizeof(user_gpio_set_t));
+        memcpy(gpio_info, &(gdisp.screen[sel].lcd_cfg.lcd_bl_en), sizeof(struct user_gpio_set));
 
         if(!b_en)
         {
@@ -1036,12 +1036,12 @@ __s32 LCD_BL_EN(__u32 sel, __bool b_en)
 
 __s32 LCD_POWER_EN(__u32 sel, __bool b_en)
 {
-    user_gpio_set_t  gpio_info[1];
+    struct user_gpio_set  gpio_info[1];
     __hdle hdl;
 
     if(gdisp.screen[sel].lcd_cfg.lcd_power_used)
     {
-        memcpy(gpio_info, &(gdisp.screen[sel].lcd_cfg.lcd_power), sizeof(user_gpio_set_t));
+        memcpy(gpio_info, &(gdisp.screen[sel].lcd_cfg.lcd_power), sizeof(struct user_gpio_set));
 
         if(!b_en)
         {
@@ -1100,9 +1100,9 @@ __s32 LCD_GPIO_init(__u32 sel)
 
         if(gdisp.screen[sel].lcd_cfg.lcd_gpio_used[i])
         {
-            user_gpio_set_t  gpio_info[1];
+            struct user_gpio_set  gpio_info[1];
 
-            memcpy(gpio_info, &(gdisp.screen[sel].lcd_cfg.lcd_gpio[i]), sizeof(user_gpio_set_t));
+            memcpy(gpio_info, &(gdisp.screen[sel].lcd_cfg.lcd_gpio[i]), sizeof(struct user_gpio_set));
             gdisp.screen[sel].gpio_hdl[i] = OSAL_GPIO_Request(gpio_info, 1);
         }
     }
@@ -1141,9 +1141,9 @@ __s32 Disp_lcdc_pin_cfg(__u32 sel, __disp_output_type_t out_type, __u32 bon)
         {
             if(gdisp.screen[sel].lcd_cfg.lcd_io_used[i])
             {
-                user_gpio_set_t  gpio_info[1];
+                struct user_gpio_set  gpio_info[1];
 
-                memcpy(gpio_info, &(gdisp.screen[sel].lcd_cfg.lcd_io[i]), sizeof(user_gpio_set_t));
+                memcpy(gpio_info, &(gdisp.screen[sel].lcd_cfg.lcd_io[i]), sizeof(struct user_gpio_set));
                 if(!bon)
                 {
                     gpio_info->mul_sel = 0;

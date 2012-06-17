@@ -318,7 +318,7 @@ err:
 *
 *******************************************************************************
 */
-static void print_gpio_set(user_gpio_set_t *gpio_set)
+static void print_gpio_set(struct user_gpio_set *gpio_set)
 {
 	DMSG_MANAGER_DEBUG("gpio_name            = %s\n", gpio_set->gpio_name);
 	DMSG_MANAGER_DEBUG("port                 = %x\n", gpio_set->port);

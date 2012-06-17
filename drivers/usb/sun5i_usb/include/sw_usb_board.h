@@ -72,7 +72,7 @@ typedef struct usb_gpio{
 	__u32 valid;          	/* pio是否可用。 0:无效, !0:有效	*/
 
 	__u32 group_type;		/* pio类型 							*/
-	user_gpio_set_t gpio_set;
+	struct user_gpio_set gpio_set;
 }usb_gpio_t;
 
 typedef struct usb_port_info{

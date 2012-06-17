@@ -54,11 +54,12 @@ struct sunxi_script_gpio_value {
 };
 
 enum sunxi_script_property_type {
-	SUNXI_CONFIG_PROP_TYPE_INVALID = 0,
-	SUNXI_CONFIG_PROP_TYPE_U32,
-	SUNXI_CONFIG_PROP_TYPE_STRING,
-	SUNXI_CONFIG_PROP_TYPE_U32_ARRAY,
-	SUNXI_CONFIG_PROP_TYPE_GPIO,
+	SUNXI_SCRIPT_PROP_TYPE_INVALID = 0,
+	SUNXI_SCRIPT_PROP_TYPE_U32,
+	SUNXI_SCRIPT_PROP_TYPE_STRING,
+	SUNXI_SCRIPT_PROP_TYPE_U32_ARRAY,
+	SUNXI_SCRIPT_PROP_TYPE_GPIO,
+	SUNXI_SCRIPT_PROP_TYPE_NULL,
 };
 
 /**
@@ -66,7 +67,7 @@ enum sunxi_script_property_type {
  */
 static inline u32 sunxi_script_property_type(struct sunxi_script_property *o)
 {
-	return o ? (o->pattern >> 16) & 0xffff : SUNXI_CONFIG_PROP_TYPE_INVALID;
+	return o ? (o->pattern >> 16) & 0xffff : SUNXI_SCRIPT_PROP_TYPE_INVALID;
 }
 
 /**
@@ -138,12 +139,39 @@ static inline int sunxi_script_property_read_u32(struct sunxi_script *buf,
 				     struct sunxi_script_property *prop,
 				     u32 *val)
 {
-	if (sunxi_script_property_type(prop) == SUNXI_CONFIG_PROP_TYPE_U32) {
+	if (sunxi_script_property_type(prop) == SUNXI_SCRIPT_PROP_TYPE_U32) {
 		u32 *v = PTR(buf, prop->offset);
 		*val = *v;
 		return 1;
 	}
 	return 0;
+}
+
+/**
+ * sunxi_script_property_read_string() - read value of string property
+ */
+static inline int sunxi_script_property_read_string(struct sunxi_script *buf,
+				     struct sunxi_script_property *prop,
+				     const char **val, size_t *length)
+{
+	enum sunxi_script_property_type t = sunxi_script_property_type(prop);
+	size_t s = sunxi_script_property_size(prop);
+
+	if (t == SUNXI_SCRIPT_PROP_TYPE_STRING && s > 0) {
+		const char *v = PTR(buf, prop->offset);
+		size_t l = s-4;
+		if (v[++l] && v[++l] && v[++l])
+			++l;
+		*val = v;
+		*length = l;
+	} else if (t == SUNXI_SCRIPT_PROP_TYPE_NULL ||
+		   t == SUNXI_SCRIPT_PROP_TYPE_STRING) {
+		*val = NULL;
+		*length = 0;
+	} else {
+		return 0;
+	}
+	return 1;
 }
 
 #undef PTR

@@ -95,6 +95,15 @@ static inline struct sunxi_script_section *sunxi_script_find_section(
 }
 
 /**
+ * sunxi_script_first_property() - get first property of a section if exists
+ */
+static inline struct sunxi_script_property *sunxi_script_first_property(
+		struct sunxi_script *buf, struct sunxi_script_section *section)
+{
+	return (section->count > 0) ? PTR(buf, section->offset) : NULL;
+}
+
+/**
  * sunxi_script_find_property() - search for a property by name in a section
  */
 static inline struct sunxi_script_property *sunxi_script_find_property(
@@ -173,7 +182,6 @@ static inline int sunxi_script_property_read_string(struct sunxi_script *buf,
 	}
 	return 1;
 }
-
 #undef PTR
 
 #endif

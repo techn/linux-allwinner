@@ -21,6 +21,8 @@
  * MA 02111-1307 USA
  */
 
+#define pr_fmt(fmt) "sunxi: config: " fmt
+
 #include <linux/kernel.h>
 #include <linux/init.h>
 #include <linux/string.h>
@@ -33,45 +35,16 @@
 #include <plat/script.h>
 #include <plat/sys_config.h>
 
-static struct sunxi_script_property *sw_cfg_get_subkey(const char *script_buf,
-				    const char *main_key, const char *sub_key)
-{
-	struct sunxi_script *hd = (struct sunxi_script *)script_buf;
-	struct sunxi_script_section *mk = (struct sunxi_script_section *)(hd + 1);
-	struct sunxi_script_property *sk = NULL;
-	int i, j;
-
-	for (i = 0; i < hd->count; i++) {
-		if (strcmp(main_key, mk->name)) {
-			mk++;
-			continue;
-		}
-
-		for (j = 0; j < mk->count; j++) {
-			sk = (struct sunxi_script_property *)(script_buf + (mk->offset<<2) + j * sizeof(struct sunxi_script_property));
-			if (!strcmp(sub_key, sk->name))
-				return sk;
-		}
-	}
-	return NULL;
-}
-
 int sw_cfg_get_int(const char *script_buf, const char *main_key,
 		   const char *sub_key)
 {
+	struct sunxi_script *head = (struct sunxi_script*)script_buf;
 	struct sunxi_script_property *sk = NULL;
-	char *pdata;
-	int value;
+	u32 value;
 
-	sk = sw_cfg_get_subkey(script_buf, main_key, sub_key);
-	if (sk == NULL)
-		return -1;
-
-	if (((sk->pattern >> 16) & 0xffff) == SCRIPT_PARSER_VALUE_TYPE_SINGLE_WORD) {
-		pdata = (char *)(script_buf + (sk->offset<<2));
-		value = *((int *)pdata);
+	sk = sunxi_script_find_property2(head, main_key, sub_key);
+	if (sunxi_script_property_read_u32(head, sk, &value))
 		return value;
-	}
 
 	return -1;
 }
@@ -79,17 +52,17 @@ int sw_cfg_get_int(const char *script_buf, const char *main_key,
 char *sw_cfg_get_str(const char *script_buf, const char *main_key,
 		     const char *sub_key, char *buf)
 {
+	struct sunxi_script *head = (struct sunxi_script*)script_buf;
 	struct sunxi_script_property *sk = NULL;
-	char *pdata;
+	const char *pdata;
+	size_t length;
 
-	sk = sw_cfg_get_subkey(script_buf, main_key, sub_key);
-	if (sk == NULL)
-		return NULL;
-
-	if (((sk->pattern >> 16) & 0xffff) == SCRIPT_PARSER_VALUE_TYPE_STRING) {
-		pdata = (char *)(script_buf + (sk->offset<<2));
-		memcpy(buf, pdata, ((sk->pattern >> 0) & 0xffff));
-		return (char *)buf;
+	sk = sunxi_script_find_property2(head, main_key, sub_key);
+	if (sunxi_script_property_read_string(head, sk, &pdata, &length)) {
+		if (length > 0)
+			memcpy(buf, pdata, length);
+		buf[length] = '\0';
+		return buf;
 	}
 
 	return NULL;
@@ -195,20 +168,20 @@ int script_parser_fetch(char *main_name, char *sub_name, int value[], int count)
 		pr_debug("pattern is: 0x%x, word_count is: 0x%x, ", pattern, word_count);
 
 		switch (pattern) {
-		case SCRIPT_PARSER_VALUE_TYPE_SINGLE_WORD:
+		case SUNXI_SCRIPT_PROP_TYPE_U32:
 			value[0] = *(int *)(script_mod_buf + (sub_key->offset<<2));
 			break;
 
-		case SCRIPT_PARSER_VALUE_TYPE_STRING:
+		case SUNXI_SCRIPT_PROP_TYPE_STRING:
 			if (count < word_count)
 				word_count = count;
 
 			memcpy((char *)value, script_mod_buf + (sub_key->offset<<2), word_count << 2);
 			break;
 
-		case SCRIPT_PARSER_VALUE_TYPE_MULTI_WORD:
+		case SUNXI_SCRIPT_PROP_TYPE_U32_ARRAY:
 			break;
-		case SCRIPT_PARSER_VALUE_TYPE_GPIO_WORD:
+		case SUNXI_SCRIPT_PROP_TYPE_GPIO:
 		{
 			struct user_gpio_set  *user_gpio_cfg = (struct user_gpio_set *)value;
 			/* buffer space enough? */
@@ -229,7 +202,8 @@ int script_parser_fetch(char *main_name, char *sub_name, int value[], int count)
 }
 EXPORT_SYMBOL(script_parser_fetch);
 
-int script_parser_fetch_ex(char *main_name, char *sub_name, int value[], enum script_parser_value_type *type, int count)
+int script_parser_fetch_ex(char *main_name, char *sub_name, int value[],
+			   enum script_parser_value_type *type, int count)
 {
 	char   main_bkname[32], sub_bkname[32];
 	char   *main_char, *sub_char;
@@ -237,7 +211,7 @@ int script_parser_fetch_ex(char *main_name, char *sub_name, int value[], enum sc
 	struct sunxi_script_property   *sub_key = NULL;
 	int    i, j;
 	int    pattern, word_count;
-	enum script_parser_value_type *value_type = type;
+	enum sunxi_script_property_type *value_type = (enum sunxi_script_property_type*)type;
 
 	pr_debug("enter script parse fetch.\n");
 
@@ -279,23 +253,23 @@ int script_parser_fetch_ex(char *main_name, char *sub_name, int value[], enum sc
 		pr_debug("pattern is: 0x%x, word_count is: 0x%x, ", pattern, word_count);
 
 		switch (pattern) {
-		case SCRIPT_PARSER_VALUE_TYPE_SINGLE_WORD:
+		case SUNXI_SCRIPT_PROP_TYPE_U32:
 			value[0] = *(int *)(script_mod_buf + (sub_key->offset<<2));
-			*value_type = SCRIPT_PARSER_VALUE_TYPE_SINGLE_WORD;
+			*value_type = SUNXI_SCRIPT_PROP_TYPE_U32;
 			break;
 
-		case SCRIPT_PARSER_VALUE_TYPE_STRING:
+		case SUNXI_SCRIPT_PROP_TYPE_STRING:
 			if (count < word_count)
 				word_count = count;
 
 			memcpy((char *)value, script_mod_buf + (sub_key->offset<<2), word_count << 2);
-			*value_type = SCRIPT_PARSER_VALUE_TYPE_STRING;
+			*value_type = SUNXI_SCRIPT_PROP_TYPE_STRING;
 			break;
 
-		case SCRIPT_PARSER_VALUE_TYPE_MULTI_WORD:
-			*value_type = SCRIPT_PARSER_VALUE_TYPE_MULTI_WORD;
+		case SUNXI_SCRIPT_PROP_TYPE_U32_ARRAY:
+			*value_type = SUNXI_SCRIPT_PROP_TYPE_U32_ARRAY;
 			break;
-		case SCRIPT_PARSER_VALUE_TYPE_GPIO_WORD:
+		case SUNXI_SCRIPT_PROP_TYPE_GPIO:
 			{
 				struct user_gpio_set  *user_gpio_cfg = (struct user_gpio_set *)value;
 
@@ -304,7 +278,7 @@ int script_parser_fetch_ex(char *main_name, char *sub_name, int value[], enum sc
 
 				strcpy(user_gpio_cfg->gpio_name, sub_char);
 				memcpy(&user_gpio_cfg->port, script_mod_buf + (sub_key->offset<<2),  sizeof(struct user_gpio_set) - 32);
-				*value_type = SCRIPT_PARSER_VALUE_TYPE_GPIO_WORD;
+				*value_type = SUNXI_SCRIPT_PROP_TYPE_GPIO;
 				break;
 			}
 		}
@@ -388,7 +362,7 @@ int script_parser_mainkey_get_gpio_count(char *main_name)
 
 			pattern    = (sub_key->pattern>>16) & 0xffff;
 
-			if (SCRIPT_PARSER_VALUE_TYPE_GPIO_WORD == pattern)
+			if (SUNXI_SCRIPT_PROP_TYPE_GPIO == pattern)
 				gpio_count++;
 		}
 	}
@@ -434,7 +408,7 @@ int script_parser_mainkey_get_gpio_cfg(char *main_name, void *gpio_cfg, int gpio
 			pattern    = (sub_key->pattern>>16) & 0xffff;
 			pr_debug("subkey pattern = %d\n", pattern);
 
-			if (SCRIPT_PARSER_VALUE_TYPE_GPIO_WORD == pattern) {
+			if (SUNXI_SCRIPT_PROP_TYPE_GPIO == pattern) {
 				strcpy(user_gpio_cfg[user_index].gpio_name, sub_key->name);
 				memcpy(&user_gpio_cfg[user_index].port, script_mod_buf + (sub_key->offset<<2), sizeof(struct user_gpio_set) - 32);
 				user_index++;

@@ -65,7 +65,7 @@ enum sunxi_script_property_type {
 /**
  * sunxi_script_property_type() - get type of a property
  */
-static inline u32 sunxi_script_property_type(struct sunxi_script_property *o)
+static inline u32 sunxi_script_property_type(const struct sunxi_script_property *o)
 {
 	return o ? (o->pattern >> 16) & 0xffff : SUNXI_SCRIPT_PROP_TYPE_INVALID;
 }
@@ -73,7 +73,7 @@ static inline u32 sunxi_script_property_type(struct sunxi_script_property *o)
 /**
  * sunxi_script_property_size() - get size of a property in bytes
  */
-static inline u32 sunxi_script_property_size(struct sunxi_script_property *o)
+static inline u32 sunxi_script_property_size(const struct sunxi_script_property *o)
 {
 	return o ? (o->pattern & 0xffff) << 2 : 0;
 }
@@ -82,8 +82,8 @@ static inline u32 sunxi_script_property_size(struct sunxi_script_property *o)
 /**
  * sunxi_script_property_value() - returns address where the value is stored
  */
-static inline void * sunxi_script_property_value(struct sunxi_script *buf,
-						 struct sunxi_script_property *o)
+static inline void * sunxi_script_property_value(const struct sunxi_script *buf,
+						 const struct sunxi_script_property *o)
 {
 	return o ? PTR(buf, o->offset) : NULL;
 }
@@ -92,7 +92,7 @@ static inline void * sunxi_script_property_value(struct sunxi_script *buf,
  * sunxi_script_first_property() - get first property of a section if exists
  */
 static inline struct sunxi_script_property *sunxi_script_first_property(
-		struct sunxi_script *buf, struct sunxi_script_section *section)
+		const struct sunxi_script *buf, const struct sunxi_script_section *section)
 {
 	return (section->count > 0) ? PTR(buf, section->offset) : NULL;
 }
@@ -101,11 +101,11 @@ static inline struct sunxi_script_property *sunxi_script_first_property(
 /**
  * sunxi_script_find_section() - search for a section by name
  */
-static inline struct sunxi_script_section *sunxi_script_find_section(
-		struct sunxi_script *buf, const char *name)
+static inline const struct sunxi_script_section *sunxi_script_find_section(
+		const struct sunxi_script *buf, const char *name)
 {
 	int i;
-	struct sunxi_script_section *section = buf->section;
+	const struct sunxi_script_section *section = buf->section;
 	for (i = buf->count; i--; section++)
 		if (strncmp(name, section->name, sizeof(section->name)) == 0)
 			return section;
@@ -116,8 +116,8 @@ static inline struct sunxi_script_section *sunxi_script_find_section(
 /**
  * sunxi_script_find_property() - search for a property by name in a section
  */
-static inline struct sunxi_script_property *sunxi_script_find_property(
-		struct sunxi_script *buf, struct sunxi_script_section *section,
+static inline const struct sunxi_script_property *sunxi_script_find_property(
+		const struct sunxi_script *buf, const struct sunxi_script_section *section,
 		const char *name)
 {
 	int i;
@@ -132,12 +132,12 @@ static inline struct sunxi_script_property *sunxi_script_find_property(
 /**
  * sunxi_script_find_property2() - search for a (section, property) by name
  */
-static inline struct sunxi_script_property *sunxi_script_find_property2(
-		struct sunxi_script *buf, const char *name_s,
+static inline const struct sunxi_script_property *sunxi_script_find_property2(
+		const struct sunxi_script *buf, const char *name_s,
 		const char *name_p)
 {
-	struct sunxi_script_section *section;
-	struct sunxi_script_property *prop = NULL;
+	const struct sunxi_script_section *section;
+	const struct sunxi_script_property *prop = NULL;
 	section = sunxi_script_find_section(buf, name_s);
 	if (section)
 		prop = sunxi_script_find_property(buf, section, name_p);
@@ -147,15 +147,15 @@ static inline struct sunxi_script_property *sunxi_script_find_property2(
 /**
  * sunxi_script_find_property_fmt() - search for a property using a formated name
  */
-struct sunxi_script_property *sunxi_script_find_property_fmt(
-		struct sunxi_script *buf, struct sunxi_script_section *section,
+const struct sunxi_script_property *sunxi_script_find_property_fmt(
+		const struct sunxi_script *buf, const struct sunxi_script_section *section,
 		const char *fmt, ...);
 
 /**
  * sunxi_script_property_read_u32() - read value of u32 type property
  */
-static inline int sunxi_script_property_read_u32(struct sunxi_script *buf,
-				     struct sunxi_script_property *prop,
+static inline int sunxi_script_property_read_u32(const struct sunxi_script *buf,
+				     const struct sunxi_script_property *prop,
 				     u32 *val)
 {
 	if (sunxi_script_property_type(prop) == SUNXI_SCRIPT_PROP_TYPE_U32) {
@@ -169,8 +169,8 @@ static inline int sunxi_script_property_read_u32(struct sunxi_script *buf,
 /**
  * sunxi_script_property_read_string() - read value of string property
  */
-static inline int sunxi_script_property_read_string(struct sunxi_script *buf,
-				     struct sunxi_script_property *prop,
+static inline int sunxi_script_property_read_string(const struct sunxi_script *buf,
+				     const struct sunxi_script_property *prop,
 				     const char **val, size_t *length)
 {
 	enum sunxi_script_property_type t = sunxi_script_property_type(prop);
@@ -196,7 +196,7 @@ static inline int sunxi_script_property_read_string(struct sunxi_script *buf,
 /**
  * sunxi_script_property_read_gpio() - read value of gpio property
  */
-static inline int sunxi_script_property_read_gpio(struct sunxi_script *buf,
+static inline int sunxi_script_property_read_gpio(const struct sunxi_script *buf,
 					struct sunxi_script_property *prop,
 					struct sunxi_script_gpio_value **val)
 {

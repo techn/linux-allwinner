@@ -177,9 +177,8 @@ unsigned long fb_size = SZ_32M;
 EXPORT_SYMBOL(fb_start);
 EXPORT_SYMBOL(fb_size);
 
-static void __init reserve_fb(void)
+static void __init reserve_fb(const char *script_base)
 {
-    char *script_base = (char *)(PAGE_OFFSET + 0x3000000);
 
     if (sw_cfg_get_int(script_base, "disp_init", "disp_init_enable"))
     {
@@ -191,7 +190,7 @@ static void __init reserve_fb(void)
 }
 
 #else
-static void __init reserve_fb(void) {}
+static void __init reserve_fb(const char *script_base) {}
 #endif
 
 #if defined CONFIG_SUN4I_G2D || defined CONFIG_SUN4I_G2D_MODULE
@@ -208,10 +207,8 @@ unsigned long g2d_size = SZ_1M * 16;
 EXPORT_SYMBOL(g2d_start);
 EXPORT_SYMBOL(g2d_size);
 
-static void __init reserve_g2d(void)
+static void __init reserve_g2d(const char *script_base)
 {
-    char *script_base = (char *)(PAGE_OFFSET + 0x3000000);
-
     if (sw_cfg_get_int(script_base, "g2d_para", "g2d_used"))
     {
 		g2d_size = sw_cfg_get_int(script_base, "g2d_para", "g2d_size");
@@ -229,7 +226,7 @@ static void __init reserve_g2d(void)
 }
 
 #else
-static void __init reserve_g2d(void) {}
+static void __init reserve_g2d(const char *script_base) {}
 #endif
 
 #if defined CONFIG_VIDEO_DECODER_SUN4I || defined CONFIG_VIDEO_DECODER_SUN4I_MODULE
@@ -271,11 +268,13 @@ static void reserve_sys(void)
 
 static void __init sw_core_reserve(void)
 {
+	char *script = (char *)(PAGE_OFFSET + 0x3000000);
+
 	pr_info("Memory Reserved:\n");
 	reserve_sys();
 	reserve_ve();
-	reserve_g2d();
-	reserve_fb();
+	reserve_g2d(script);
+	reserve_fb(script);
 }
 
 void sw_irq_ack(struct irq_data *irqd)

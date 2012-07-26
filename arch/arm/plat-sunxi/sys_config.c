@@ -38,8 +38,8 @@
 int sw_cfg_get_int(const char *script_buf, const char *main_key,
 		   const char *sub_key)
 {
-	struct sunxi_script *head = (struct sunxi_script*)script_buf;
-	struct sunxi_script_property *sk = NULL;
+	const struct sunxi_script *head = (struct sunxi_script*)script_buf;
+	const struct sunxi_script_property *sk = NULL;
 	u32 value;
 
 	sk = sunxi_script_find_property2(head, main_key, sub_key);
@@ -52,8 +52,8 @@ int sw_cfg_get_int(const char *script_buf, const char *main_key,
 char *sw_cfg_get_str(const char *script_buf, const char *main_key,
 		     const char *sub_key, char *buf)
 {
-	struct sunxi_script *head = (struct sunxi_script*)script_buf;
-	struct sunxi_script_property *sk = NULL;
+	const struct sunxi_script *head = (struct sunxi_script*)script_buf;
+	const struct sunxi_script_property *sk = NULL;
 	const char *pdata;
 	size_t length;
 
@@ -72,7 +72,7 @@ char *sw_cfg_get_str(const char *script_buf, const char *main_key,
 /*
  * Script Operations
  */
-static  struct sunxi_script *script_head;
+static const struct sunxi_script *script_head;
 
 int script_parser_init(char *script_buf)
 {
@@ -99,7 +99,7 @@ static inline int __script_prop_fetch(const char *name_s, const char *name_p,
 				      enum sunxi_script_property_type *type,
 				      void *buf, size_t buf_size)
 {
-	struct sunxi_script_property *prop;
+	const struct sunxi_script_property *prop;
 
 	/* check params */
 	if (!script_head)
@@ -174,7 +174,7 @@ EXPORT_SYMBOL(script_parser_fetch_ex);
 
 int script_parser_subkey_count(char *main_name)
 {
-	struct sunxi_script_section  *main_key = NULL;
+	const struct sunxi_script_section  *main_key = NULL;
 
 	if (!script_head)
 		return SCRIPT_PARSER_EMPTY_BUFFER;
@@ -199,8 +199,8 @@ int script_parser_mainkey_count(void)
 
 int script_parser_mainkey_get_gpio_count(char *main_name)
 {
-	struct sunxi_script_section  *main_key = NULL;
-	struct sunxi_script_property   *sub_key = NULL;
+	const struct sunxi_script_section  *main_key = NULL;
+	const struct sunxi_script_property   *sub_key = NULL;
 	int    i, gpio_count = 0;
 
 	if (!script_head)
@@ -225,8 +225,8 @@ int script_parser_mainkey_get_gpio_count(char *main_name)
 
 int script_parser_mainkey_get_gpio_cfg(char *main_name, void *gpio_cfg, int gpio_count)
 {
-	struct sunxi_script_section  *main_key = NULL;
-	struct sunxi_script_property   *sub_key = NULL;
+	const struct sunxi_script_section  *main_key = NULL;
+	const struct sunxi_script_property   *sub_key = NULL;
 	struct user_gpio_set  *user_gpio_cfg = (struct user_gpio_set *)gpio_cfg;
 	int    i, user_index = 0;
 

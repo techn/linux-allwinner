@@ -30,11 +30,11 @@
 
 #include <plat/script.h>
 
-struct sunxi_script_property *sunxi_script_find_property_fmt(
-		struct sunxi_script *buf, struct sunxi_script_section *section,
+const struct sunxi_script_property *sunxi_script_find_property_fmt(
+		const struct sunxi_script *buf, const struct sunxi_script_section *section,
 		const char *fmt, ...)
 {
-	struct sunxi_script_property *prop;
+	const struct sunxi_script_property *prop;
 	char name[sizeof(prop->name)];
 	va_list args;
 

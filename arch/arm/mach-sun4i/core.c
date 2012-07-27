@@ -179,9 +179,13 @@ EXPORT_SYMBOL(fb_size);
 
 static inline void reserve_fb(void)
 {
+#if 0
 	u32 enabled;
 	if (sunxi_property2_read_u32("disp_init", "disp_init_enable", &enabled) &&
 	    enabled) {
+#else
+	if (1) {
+#endif
 		memblock_reserve(fb_start, fb_size);
 		pr_reserve_info("LCD ", fb_start, fb_size);
 	} else
@@ -208,6 +212,7 @@ EXPORT_SYMBOL(g2d_size);
 
 static inline void reserve_g2d(void)
 {
+#if 0
 	const struct sunxi_section *sp;
 	u32 x = 0;
 
@@ -219,6 +224,9 @@ static inline void reserve_g2d(void)
 				x = SW_G2D_MEM_MAX;
 			g2d_size = x;
 		}
+#else
+	if (1) {
+#endif
 		memblock_reserve(g2d_start, g2d_size);
 		pr_reserve_info("G2D ", g2d_start, g2d_size);
 	} else

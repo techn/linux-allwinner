@@ -35,100 +35,39 @@
 #include <plat/script.h>
 #include <plat/sys_config.h>
 
-int sw_cfg_get_int(const char *script_buf, const char *main_key,
-		   const char *sub_key)
-{
-	const struct sunxi_script *head = (struct sunxi_script*)script_buf;
-	const struct sunxi_script_property *sk = NULL;
-	u32 value;
-
-	sk = sunxi_script_find_property2(head, main_key, sub_key);
-	if (sunxi_script_property_read_u32(head, sk, &value))
-		return value;
-
-	return -1;
-}
-
-char *sw_cfg_get_str(const char *script_buf, const char *main_key,
-		     const char *sub_key, char *buf)
-{
-	const struct sunxi_script *head = (struct sunxi_script*)script_buf;
-	const struct sunxi_script_property *sk = NULL;
-	const char *pdata;
-	size_t length;
-
-	sk = sunxi_script_find_property2(head, main_key, sub_key);
-	if (sunxi_script_property_read_string(head, sk, &pdata, &length)) {
-		if (length > 0)
-			memcpy(buf, pdata, length);
-		buf[length] = '\0';
-		return buf;
-	}
-
-	return NULL;
-}
-
-
 /*
  * Script Operations
  */
-static const struct sunxi_script *script_head;
-
-int script_parser_init(char *script_buf)
-{
-	pr_debug("%s(%d)-%s, script_buf addr is %p:\n", __FILE__, __LINE__, __func__, script_buf);
-	if (script_buf) {
-		script_head = (struct sunxi_script *)script_buf;
-
-		pr_debug("succeed: %s(%d)-%s\n", __FILE__, __LINE__, __func__);
-		return SCRIPT_PARSER_OK;
-	} else {
-	pr_warning("failed: %s(%d)-%s\n", __FILE__, __LINE__, __func__);
-	return SCRIPT_PARSER_EMPTY_BUFFER;
-	}
-}
-
-int script_parser_exit(void)
-{
-	script_head = NULL;
-
-	return SCRIPT_PARSER_OK;
-}
-
 static inline int __script_prop_fetch(const char *name_s, const char *name_p,
-				      enum sunxi_script_property_type *type,
+				      enum sunxi_property_type *type,
 				      void *buf, size_t buf_size)
 {
-	const struct sunxi_script_property *prop;
+	const struct sunxi_property *prop;
 
 	/* check params */
-	if (!script_head)
-		return SCRIPT_PARSER_EMPTY_BUFFER;
-
 	if ((name_s == NULL) || (name_p == NULL))
 		return SCRIPT_PARSER_KEYNAME_NULL;
 
 	if (buf == NULL)
 		return SCRIPT_PARSER_DATA_VALUE_NULL;
 
-	prop = sunxi_script_find_property2(script_head, name_s, name_p);
+	prop = sunxi_find_property2(name_s, name_p);
 	if (prop) {
-		enum sunxi_script_property_type t = sunxi_script_property_type(prop);
-		size_t l = sunxi_script_property_size(prop);
-		void *value = sunxi_script_property_value(script_head, prop);
+		enum sunxi_property_type t = sunxi_property_type(prop);
+		size_t l = sunxi_property_size(prop);
+		void *value = sunxi_property_value(prop);
 
 		switch (t) {
-		case SUNXI_SCRIPT_PROP_TYPE_U32:
+		case SUNXI_PROP_TYPE_U32:
 			BUG_ON(l != sizeof(u32));
 			break;
-		case SUNXI_SCRIPT_PROP_TYPE_STRING:
+		case SUNXI_PROP_TYPE_STRING:
+		case SUNXI_PROP_TYPE_U32_ARRAY:
 			if (buf_size < l)
 				l = buf_size; /* truncate */
 			break;
-		case SUNXI_SCRIPT_PROP_TYPE_U32_ARRAY:
-			break; /* why lying? */
-		case SUNXI_SCRIPT_PROP_TYPE_GPIO:
-			BUG_ON(l != sizeof(struct sunxi_script_gpio_value));
+		case SUNXI_PROP_TYPE_GPIO:
+			BUG_ON(l != sizeof(struct sunxi_property_gpio_value));
 
 			if (unlikely(sizeof(struct user_gpio_set) > buf_size))
 				return SCRIPT_PARSER_BUFFER_NOT_ENOUGH;
@@ -136,12 +75,12 @@ static inline int __script_prop_fetch(const char *name_s, const char *name_p,
 			strncpy(buf, name_p, 32);
 			buf = (char*)buf + 32;
 			break;
-		case SUNXI_SCRIPT_PROP_TYPE_NULL:
+		case SUNXI_PROP_TYPE_NULL:
 			l = 0;
 			break;
 		default:
 			l = 0;
-			t = SUNXI_SCRIPT_PROP_TYPE_INVALID;
+			t = SUNXI_PROP_TYPE_INVALID;
 		}
 
 		if (type)
@@ -155,7 +94,6 @@ static inline int __script_prop_fetch(const char *name_s, const char *name_p,
 	return SCRIPT_PARSER_KEY_NOT_FIND;
 }
 
-
 int script_parser_fetch(char *main_name, char *sub_name, int value[], int count)
 {
 	BUG_ON(count < 1);
@@ -166,7 +104,7 @@ EXPORT_SYMBOL(script_parser_fetch);
 int script_parser_fetch_ex(char *main_name, char *sub_name, int value[],
 			   enum script_parser_value_type *type, int count)
 {
-	enum sunxi_script_property_type *value_type = (enum sunxi_script_property_type*)type;
+	enum sunxi_property_type *value_type = (enum sunxi_property_type*)type;
 	BUG_ON(count < 1);
 	return __script_prop_fetch(main_name, sub_name, value_type, value, count<<2);
 }
@@ -174,48 +112,38 @@ EXPORT_SYMBOL(script_parser_fetch_ex);
 
 int script_parser_subkey_count(char *main_name)
 {
-	const struct sunxi_script_section  *main_key = NULL;
-
-	if (!script_head)
-		return SCRIPT_PARSER_EMPTY_BUFFER;
+	const struct sunxi_section *sp = NULL;
 
 	if (main_name == NULL)
 		return SCRIPT_PARSER_KEYNAME_NULL;
 
-	main_key = sunxi_script_find_section(script_head, main_name);
-	if (main_key)
-		return main_key->count;
+	sp = sunxi_find_section(main_name);
+	if (sp)
+		return sp->count;
 
 	return -1;
 }
 
 int script_parser_mainkey_count(void)
 {
-	if (!script_head)
-		return SCRIPT_PARSER_EMPTY_BUFFER;
-
-	return     script_head->count;
+	return sunxi_script_base->count;
 }
 
 int script_parser_mainkey_get_gpio_count(char *main_name)
 {
-	const struct sunxi_script_section  *main_key = NULL;
-	const struct sunxi_script_property   *sub_key = NULL;
+	const struct sunxi_section *sp;
+	const struct sunxi_property *pp;
 	int    i, gpio_count = 0;
-
-	if (!script_head)
-		return SCRIPT_PARSER_EMPTY_BUFFER;
 
 	if (main_name == NULL)
 		return SCRIPT_PARSER_KEYNAME_NULL;
 
-	main_key = sunxi_script_find_section(script_head, main_name);
-	if (main_key && main_key->count > 0) {
-		sub_key = sunxi_script_first_property(script_head, main_key);
+	sp = sunxi_find_section(main_name);
+	if (sp && sp->count > 0) {
+		pp = sunxi_first_property(sp);
 
-		for (i = main_key->count; i--; sub_key++) {
-			if (SUNXI_SCRIPT_PROP_TYPE_GPIO ==
-			    sunxi_script_property_type(sub_key))
+		for (i = sp->count; i--; pp++) {
+			if (SUNXI_PROP_TYPE_GPIO == sunxi_property_type(pp))
 				gpio_count++;
 		}
 	}
@@ -225,33 +153,32 @@ int script_parser_mainkey_get_gpio_count(char *main_name)
 
 int script_parser_mainkey_get_gpio_cfg(char *main_name, void *gpio_cfg, int gpio_count)
 {
-	const struct sunxi_script_section  *main_key = NULL;
-	const struct sunxi_script_property   *sub_key = NULL;
+	const struct sunxi_section *sp;
+	const struct sunxi_property  *pp;
 	struct user_gpio_set  *user_gpio_cfg = (struct user_gpio_set *)gpio_cfg;
-	int    i, user_index = 0;
-
-	if (!script_head)
-		return SCRIPT_PARSER_EMPTY_BUFFER;
+	int    i, j;
 
 	if (main_name == NULL)
 		return SCRIPT_PARSER_KEYNAME_NULL;
 
 	memset(user_gpio_cfg, 0, sizeof(struct user_gpio_set) * gpio_count);
 
-	main_key = sunxi_script_find_section(script_head, main_name);
-	if (main_key && main_key->count > 0) {
-		sub_key = sunxi_script_first_property(script_head, main_key);
-		user_index = 0;
+	sp = sunxi_find_section(main_name);
+	if (sp && sp->count > 0) {
+		pp = sunxi_first_property(sp);
+		j = 0;
 
-		for (i = main_key->count; i--; sub_key++) {
-			if (SUNXI_SCRIPT_PROP_TYPE_GPIO ==
-			    sunxi_script_property_type(sub_key)) {
-				void *data = sunxi_script_property_value(script_head, sub_key);
-				strcpy(user_gpio_cfg[user_index].gpio_name, sub_key->name);
-				memcpy(&user_gpio_cfg[user_index].port, data, sizeof(struct user_gpio_set) - 32);
+		for (i = sp->count; i--; pp++) {
+			if (SUNXI_PROP_TYPE_GPIO == sunxi_property_type(pp)) {
+				void *data = sunxi_property_value(pp);
+				strncpy(user_gpio_cfg[j].gpio_name, pp->name,
+					sizeof(pp->name));
+				memcpy(&user_gpio_cfg[j].port, data,
+				       sizeof(struct user_gpio_set) -
+				       sizeof(pp->name));
 
-				user_index++;
-				if (user_index >= gpio_count)
+				j++;
+				if (j >= gpio_count)
 					break;
 			}
 		}
@@ -317,7 +244,8 @@ int gpio_init(void)
 {
 	printk(KERN_INFO "Init eGon pin module V2.0\n");
 	gpio_g_pioMemBase = (u32)CSP_OSAL_PHY_2_VIRT(CSP_PIN_PHY_ADDR_BASE , CSP_PIN_PHY_ADDR_SIZE);
-	return script_parser_init((char *)__va(SYS_CONFIG_MEMBASE));
+	sunxi_script_init((void *)__va(SYS_CONFIG_MEMBASE));
+	return 1;
 }
 fs_initcall(gpio_init);
 

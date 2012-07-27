@@ -30,11 +30,24 @@
 
 #include <plat/script.h>
 
-const struct sunxi_script_property *sunxi_script_find_property_fmt(
-		const struct sunxi_script *buf, const struct sunxi_script_section *section,
+const struct sunxi_script *sunxi_script_base = NULL;
+EXPORT_SYMBOL(sunxi_script_base);
+
+void sunxi_script_init(const struct sunxi_script *base)
+{
+	sunxi_script_base = base;
+	pr_debug("base: 0x%p\n", base);
+	pr_debug("version: %u.%u.%u count: %u\n",
+		base->version[0], base->version[1], base->version[2],
+		base->count);
+}
+EXPORT_SYMBOL(sunxi_script_init);
+
+const struct sunxi_property *sunxi_find_property_fmt(
+		const struct sunxi_section *sp,
 		const char *fmt, ...)
 {
-	const struct sunxi_script_property *prop;
+	const struct sunxi_property *prop;
 	char name[sizeof(prop->name)];
 	va_list args;
 
@@ -42,7 +55,7 @@ const struct sunxi_script_property *sunxi_script_find_property_fmt(
 	vsprintf(name, fmt, args);
 	va_end(args);
 
-	prop = sunxi_script_find_property(buf, section, name);
+	prop = sunxi_find_property(sp, name);
 	return prop;
 }
-EXPORT_SYMBOL_GPL(sunxi_script_find_property_fmt);
+EXPORT_SYMBOL_GPL(sunxi_find_property_fmt);

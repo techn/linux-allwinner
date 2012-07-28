@@ -85,13 +85,7 @@ struct user_gpio_set {
     int data;
 };
 
-/* functions for early boot */
-extern int sw_cfg_get_int(const char *script_buf, const char *main_key, const char *sub_key);
-extern char *sw_cfg_get_str(const char *script_buf, const char *main_key, const char *sub_key, char *buf);
-
 /* script operations */
-extern int script_parser_init(char *script_buf);
-extern int script_parser_exit(void);
 extern int script_parser_fetch(char *main_name, char *sub_name, int value[], int count);
 extern int script_parser_fetch_ex(char *main_name, char *sub_name, int value[],
 				  enum script_parser_value_type *type, int count);

@@ -467,7 +467,7 @@ static void sw_hcd_board_set_vbus(struct sw_hcd *sw_hcd, int is_on)
 	DMSG_INFO("[%s]: Set USB Power %s\n", sw_hcd->driver_name, (is_on ? "ON" : "OFF"));
 
     /* set power */
-    if(sw_hcd->sw_hcd_io->drv_vbus_gpio_set.data == 0){
+    if(sw_hcd->sw_hcd_io->drv_vbus_gpio_set.d.data == 0){
         on_off = is_on ? 1 : 0;
     }else{
         on_off = is_on ? 0 : 1;

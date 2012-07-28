@@ -24,6 +24,8 @@
 #ifndef __SW_SYS_CONFIG_H
 #define __SW_SYS_CONFIG_H
 
+#include <plat/script.h>
+
 #define   SCRIPT_PARSER_OK                   (0)
 #define   SCRIPT_PARSER_EMPTY_BUFFER         (-1)
 #define   SCRIPT_PARSER_KEYNAME_NULL         (-2)
@@ -77,12 +79,7 @@ enum pin_data {
 
 struct user_gpio_set {
     char  gpio_name[32];
-    int port;
-    int port_num;
-    int mul_sel;
-    int pull;
-    int drv_level;
-    int data;
+    struct sunxi_property_gpio_value d;
 };
 
 /* script operations */

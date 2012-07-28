@@ -926,7 +926,7 @@ static void __sw_set_vbus(struct sw_hci_hcd *sw_hci, int is_on)
 	sw_hci->power_flag = is_on;
 
     /* set power */
-    if(sw_hci->drv_vbus_gpio_set.data == 0){
+    if(sw_hci->drv_vbus_gpio_set.d.data == 0){
         on_off = is_on ? 1 : 0;
     }else{
         on_off = is_on ? 0 : 1;
@@ -1091,12 +1091,12 @@ static void print_sw_hci(struct sw_hci_hcd *sw_hci)
 	DMSG_DEBUG("host_init_state      = %d\n", sw_hci->host_init_state);
 
 	DMSG_DEBUG("gpio_name            = %s\n", sw_hci->drv_vbus_gpio_set.gpio_name);
-	DMSG_DEBUG("port                 = %d\n", sw_hci->drv_vbus_gpio_set.port);
-	DMSG_DEBUG("port_num             = %d\n", sw_hci->drv_vbus_gpio_set.port_num);
-	DMSG_DEBUG("mul_sel              = %d\n", sw_hci->drv_vbus_gpio_set.mul_sel);
-	DMSG_DEBUG("pull                 = %d\n", sw_hci->drv_vbus_gpio_set.pull);
-	DMSG_DEBUG("drv_level            = %d\n", sw_hci->drv_vbus_gpio_set.drv_level);
-	DMSG_DEBUG("data                 = %d\n", sw_hci->drv_vbus_gpio_set.data);
+	DMSG_DEBUG("port                 = %d\n", sw_hci->drv_vbus_gpio_set.d.port);
+	DMSG_DEBUG("port_num             = %d\n", sw_hci->drv_vbus_gpio_set.d.port_num);
+	DMSG_DEBUG("mul_sel              = %d\n", sw_hci->drv_vbus_gpio_set.d.mul_sel);
+	DMSG_DEBUG("pull                 = %d\n", sw_hci->drv_vbus_gpio_set.d.pull);
+	DMSG_DEBUG("drv_level            = %d\n", sw_hci->drv_vbus_gpio_set.d.drv_level);
+	DMSG_DEBUG("data                 = %d\n", sw_hci->drv_vbus_gpio_set.d.data);
 
 	DMSG_DEBUG("\n--------------------------\n");
 

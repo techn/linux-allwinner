@@ -781,7 +781,7 @@ static void __sw_set_vbus(struct sw_hci_hcd *sw_hci, int is_on)
 	sw_hci->power_flag = is_on;
 
     /* set power */
-    if(sw_hci->drv_vbus_gpio_set.data == 0){
+    if(sw_hci->drv_vbus_gpio_set.d.data == 0){
         on_off = is_on ? 1 : 0;
     }else{
         on_off = is_on ? 0 : 1;

@@ -817,11 +817,11 @@ __s32 pwm_enable(__u32 channel, __bool b_en)
 
         if(b_en)
         {
-            gpio_info->mul_sel = 2;
+            gpio_info->d.mul_sel = 2;
         }
         else
         {
-            gpio_info->mul_sel = 0;
+            gpio_info->d.mul_sel = 0;
         }
         hdl = OSAL_GPIO_Request(gpio_info, 1);
         OSAL_GPIO_Release(hdl, 2);
@@ -986,7 +986,7 @@ __s32 LCD_PWM_EN(__u32 sel, __bool b_en)
             }
             else
             {
-                gpio_info->mul_sel = 0;
+                gpio_info->d.mul_sel = 0;
                 hdl = OSAL_GPIO_Request(gpio_info, 1);
                 OSAL_GPIO_Release(hdl, 2);
             }
@@ -995,15 +995,15 @@ __s32 LCD_PWM_EN(__u32 sel, __bool b_en)
         {
             if(b_en != gpanel_info[sel].lcd_pwm_pol)
             {
-                gpio_info->mul_sel = 1;
-                gpio_info->data = 1;
+                gpio_info->d.mul_sel = 1;
+                gpio_info->d.data = 1;
                 hdl = OSAL_GPIO_Request(gpio_info, 1);
                 OSAL_GPIO_Release(hdl, 2);
             }
             else
             {
-                gpio_info->mul_sel = 1;
-                gpio_info->data = 0;
+                gpio_info->d.mul_sel = 1;
+                gpio_info->d.data = 0;
                 hdl = OSAL_GPIO_Request(gpio_info, 1);
                 OSAL_GPIO_Release(hdl, 2);
             }
@@ -1024,7 +1024,7 @@ __s32 LCD_BL_EN(__u32 sel, __bool b_en)
 
         if(!b_en)
         {
-            gpio_info->data = (gpio_info->data==0)?1:0;
+            gpio_info->d.data = (gpio_info->d.data==0)?1:0;
         }
 
         hdl = OSAL_GPIO_Request(gpio_info, 1);
@@ -1045,7 +1045,7 @@ __s32 LCD_POWER_EN(__u32 sel, __bool b_en)
 
         if(!b_en)
         {
-            gpio_info->data = (gpio_info->data==0)?1:0;
+            gpio_info->d.data = (gpio_info->d.data==0)?1:0;
         }
 
         hdl = OSAL_GPIO_Request(gpio_info, 1);
@@ -1146,13 +1146,13 @@ __s32 Disp_lcdc_pin_cfg(__u32 sel, __disp_output_type_t out_type, __u32 bon)
                 memcpy(gpio_info, &(gdisp.screen[sel].lcd_cfg.lcd_io[i]), sizeof(struct user_gpio_set));
                 if(!bon)
                 {
-                    gpio_info->mul_sel = 0;
+                    gpio_info->d.mul_sel = 0;
                 }
                 else
                 {
-                    if((gpanel_info[sel].lcd_if == 3) && (gpio_info->mul_sel==2))
+                    if((gpanel_info[sel].lcd_if == 3) && (gpio_info->d.mul_sel==2))
                     {
-                        gpio_info->mul_sel = 3;
+                        gpio_info->d.mul_sel = 3;
                     }
                 }
                 lcd_pin_hdl = OSAL_GPIO_Request(gpio_info, 1);

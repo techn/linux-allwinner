@@ -1077,7 +1077,7 @@ wemac_init_wemac(struct net_device *dev)
 
 #if PHY_POWER
 	if(db->mos_pin_handler){
-		db->mos_gpio->data = 1;
+		db->mos_gpio->d.data = 1;
 		gpio_set_one_pin_status(db->mos_pin_handler, db->mos_gpio, "emac_power", 1);
 	}
 #endif
@@ -1630,7 +1630,7 @@ static void wemac_shutdown(struct net_device *dev)
 
 #if PHY_POWER
 	if(db->mos_pin_handler){
-		db->mos_gpio->data = 0;
+		db->mos_gpio->d.data = 0;
 		gpio_set_one_pin_status(db->mos_pin_handler, db->mos_gpio, "emac_power", 1);
 	}
 #endif
@@ -1811,7 +1811,7 @@ static int __devinit wemac_probe(struct platform_device *pdev)
 			db->mos_pin_handler = gpio_request(db->mos_gpio, 1);
 			if(0 == db->mos_pin_handler)
 				printk(KERN_ERR "can't request gpio_port %d, port_num %d\n",
-						db->mos_gpio->port, db->mos_gpio->port_num);
+						db->mos_gpio->d.port, db->mos_gpio->d.port_num);
 		}
 	}
 #endif

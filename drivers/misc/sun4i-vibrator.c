@@ -128,7 +128,7 @@ static int __init sun4i_vibrator_init(void)
 		goto exit;
 	}
 
-	vibe_off = vibe_gpio.data;
+	vibe_off = vibe_gpio.d.data;
 	pr_debug("vibe_off is %d\n", vibe_off);
 
 	vibe_gpio_handler = gpio_request_ex("motor_para", "motor_shake");

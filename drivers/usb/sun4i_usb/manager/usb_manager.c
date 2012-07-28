@@ -199,30 +199,30 @@ static void modify_usb_borad_info(struct usb_cfg *cfg)
     u32 i = 0;
 
 	for(i = 0; i < cfg->usbc_num; i++){
-		if(cfg->port[i].id.gpio_set.port){
+		if(cfg->port[i].id.gpio_set.d.port){
 			cfg->port[i].id.valid = 1;
 
-			if(cfg->port[i].id.gpio_set.port == 0xffff){
+			if(cfg->port[i].id.gpio_set.d.port == 0xffff){
 				cfg->port[i].id.group_type = GPIO_GROUP_TYPE_POWER;
 			}else{
 				cfg->port[i].id.group_type = GPIO_GROUP_TYPE_PIO;
 			}
 		}
 
-		if(cfg->port[i].det_vbus.gpio_set.port){
+		if(cfg->port[i].det_vbus.gpio_set.d.port){
 			cfg->port[i].det_vbus.valid = 1;
 
-			if(cfg->port[i].det_vbus.gpio_set.port == 0xffff){
+			if(cfg->port[i].det_vbus.gpio_set.d.port == 0xffff){
 				cfg->port[i].det_vbus.group_type = GPIO_GROUP_TYPE_POWER;
 			}else{
 				cfg->port[i].det_vbus.group_type = GPIO_GROUP_TYPE_PIO;
 			}
 		}
 
-		if(cfg->port[i].drv_vbus.gpio_set.port){
+		if(cfg->port[i].drv_vbus.gpio_set.d.port){
 			cfg->port[i].drv_vbus.valid = 1;
 
-			if(cfg->port[i].drv_vbus.gpio_set.port == 0xffff){
+			if(cfg->port[i].drv_vbus.gpio_set.d.port == 0xffff){
 				cfg->port[i].drv_vbus.group_type = GPIO_GROUP_TYPE_POWER;
 			}else{
 				cfg->port[i].drv_vbus.group_type = GPIO_GROUP_TYPE_PIO;

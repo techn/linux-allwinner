@@ -613,7 +613,8 @@ __s32 usb_hw_scan_init(struct usb_cfg *cfg)
 					}
 
                     /* 如果id和vbus的pin相同, 就不需要拉pio了 */
-					if(port_info->id.gpio_set.port_num == port_info->det_vbus.gpio_set.port_num){
+					if (port_info->id.gpio_set.d.port_num ==
+					    port_info->det_vbus.gpio_set.d.port_num) {
 						need_pull_pio = 0;
 					}
 

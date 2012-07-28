@@ -50,9 +50,9 @@ struct sunxi_property_gpio_value {
 	u32 port;
 	u32 port_num;
 	u32 mul_sel;
-	u32 pull;
-	u32 drv_level;
-	u32 data;
+	s32 pull;
+	s32 drv_level;
+	s32 data;
 };
 
 enum sunxi_property_type {

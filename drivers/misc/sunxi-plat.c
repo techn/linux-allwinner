@@ -72,21 +72,21 @@ done:
 	return ret;
 }
 
-static void config_feature(struct sunxi_script *head,
-			  struct sunxi_script_section *section,
+static void config_feature(const struct sunxi_section *section,
 			  const char *name, int index)
 {
-	struct sunxi_script_property *prop;
-	u32 used = 0;
+	const struct sunxi_property *prop;
+	const u32 *used;
 
-	prop = sunxi_script_find_property_fmt(head, section, "%s_used", name);
-	if (sunxi_script_property_read_u32(head, prop, &used)) {
+	prop = sunxi_find_property_fmt(section, "%s_used", name);
+	if (prop && (sunxi_property_type(prop) == SUNXI_PROP_TYPE_U32)) {
+		used = sunxi_property_value(prop);
 		if (index < 0)
 			pr_debug("config: [%s] -> %s used:%u\n",
-				 section->name, name, used);
+				 section->name, name, *used);
 		else
 			pr_debug("config: [%s] -> %s:%d used:%u\n",
-				 section->name, name, index, used);
+				 section->name, name, index, *used);
 	} else if (index < 0) {
 		pr_debug("config: [%s] -> %s assumed unused\n",
 			 section->name, name);
@@ -99,17 +99,16 @@ static void config_feature(struct sunxi_script *head,
 static int config_scan(void)
 {
 	int i;
-	struct sunxi_script *head = (void*)__va(SYS_CONFIG_MEMBASE);
-	struct sunxi_script_section *section = head->section;
+	const struct sunxi_section *section;
 
-	pr_debug("config: scanning %d sections at 0x%lx\n",
-		 head->count, SYS_CONFIG_MEMBASE);
-	for (i=head->count; i; i--, section++) {
+	pr_debug("config: scanning %d sections at 0x%p\n",
+		 sunxi_get_section_count(), sunxi_script_base);
+	sunxi_for_each_section(section, i) {
 		char feature[32] = "";
 		int index = -1;
 
 		if (feature_name(section->name, feature, &index))
-			config_feature(head, section, feature, index);
+			config_feature(section, feature, index);
 		else
 			pr_debug("config: [%s] SKIP\n", section->name);
 

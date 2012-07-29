@@ -64,42 +64,57 @@ enum sunxi_property_type {
 	SUNXI_PROP_TYPE_NULL,
 };
 
+/* local helpers, will undef */
+#define PTR(B, OFF)	(void*)((char*)(B)+((OFF)<<2))
+
 void sunxi_script_init(const struct sunxi_script *);
 
-/**
- * sunxi_property_type() - get type of a property
- */
-static inline u32 sunxi_property_type(const struct sunxi_property *o)
+/* counts */
+static inline int sunxi_get_section_count(void)
 {
-	return o ? (o->pattern >> 16) & 0xffff : SUNXI_PROP_TYPE_INVALID;
+	return sunxi_script_base->count;
+}
+static inline int sunxi_get_property_count(const struct sunxi_section *sp)
+{
+	return sp ? sp->count : 0;
 }
 
-/**
- * sunxi_property_size() - get size of a property in bytes
- */
-static inline u32 sunxi_property_size(const struct sunxi_property *o)
+/* first element */
+static inline const struct sunxi_section *sunxi_get_first_section(void)
 {
-	return o ? (o->pattern & 0xffff) << 2 : 0;
+	return (sunxi_script_base->count > 0) ?
+		sunxi_script_base->section : NULL;
 }
-
-#define PTR(B, OFF)	(void*)((char*)(B)+((OFF)<<2))
-/**
- * sunxi_property_value() - returns address where the value is stored
- */
-static inline void * sunxi_property_value(const struct sunxi_property *o)
-{
-	return o ? PTR(sunxi_script_base, o->offset) : NULL;
-}
-
-/**
- * sunxi_first_property() - get first property of a section if exists
- */
-static inline struct sunxi_property *sunxi_first_property(
+static inline const struct sunxi_property *sunxi_get_first_property(
 		const struct sunxi_section *sp)
 {
 	return (sp->count > 0) ? PTR(sunxi_script_base, sp->offset) : NULL;
 }
+
+/* property details */
+static inline u32 sunxi_property_type(const struct sunxi_property *o)
+{
+	return o ? (o->pattern >> 16) & 0xffff : SUNXI_PROP_TYPE_INVALID;
+}
+static inline u32 sunxi_property_size(const struct sunxi_property *o)
+{
+	return o ? (o->pattern & 0xffff) << 2 : 0;
+}
+static inline void *sunxi_property_value(const struct sunxi_property *o)
+{
+	return o ? PTR(sunxi_script_base, o->offset) : NULL;
+}
 #undef PTR
+
+/* iterators */
+#define sunxi_for_each_section(SV, CV)	\
+	for (CV = sunxi_get_section_count(), \
+	     SV = sunxi_get_first_section(); \
+	     CV--; SV++)
+#define sunxi_for_each_property(SP, PV, CV) \
+	for (CV = sunxi_get_property_count(SP), \
+	     PV = sunxi_get_first_property(SP); \
+	     CV--; PV++)
 
 /**
  * sunxi_find_section() - search for a section by name
@@ -107,11 +122,10 @@ static inline struct sunxi_property *sunxi_first_property(
 static inline const struct sunxi_section *sunxi_find_section(const char *name)
 {
 	int i;
-	const struct sunxi_section *section = sunxi_script_base->section;
-	for (i = sunxi_script_base->count; i--; section++)
+	const struct sunxi_section *section;
+	sunxi_for_each_section(section, i)
 		if (strncmp(name, section->name, sizeof(section->name)) == 0)
 			return section;
-
 	return NULL;
 }
 
@@ -123,11 +137,10 @@ static inline const struct sunxi_property *sunxi_find_property(
 		const char *name)
 {
 	int i;
-	const struct sunxi_property *prop = sunxi_first_property(sp);
-	for (i = sp->count; i--; prop++)
+	const struct sunxi_property *prop;
+	sunxi_for_each_property(sp, prop, i)
 		if (strncmp(name, prop->name, sizeof(prop->name)) == 0)
 			return prop;
-
 	return NULL;
 }
 

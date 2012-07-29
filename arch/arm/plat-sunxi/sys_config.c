@@ -139,10 +139,8 @@ int script_parser_mainkey_get_gpio_count(char *main_name)
 		return SCRIPT_PARSER_KEYNAME_NULL;
 
 	sp = sunxi_find_section(main_name);
-	if (sp && sp->count > 0) {
-		pp = sunxi_first_property(sp);
-
-		for (i = sp->count; i--; pp++) {
+	if (sp) {
+		sunxi_for_each_property(sp, pp, i) {
 			if (SUNXI_PROP_TYPE_GPIO == sunxi_property_type(pp))
 				gpio_count++;
 		}
@@ -163,12 +161,9 @@ int script_parser_mainkey_get_gpio_cfg(char *main_name, void *gpio_cfg, int gpio
 
 	memset(user_gpio_cfg, 0, sizeof(struct user_gpio_set) * gpio_count);
 
-	sp = sunxi_find_section(main_name);
-	if (sp && sp->count > 0) {
-		pp = sunxi_first_property(sp);
+	if ((sp = sunxi_find_section(main_name))) {
 		j = 0;
-
-		for (i = sp->count; i--; pp++) {
+		sunxi_for_each_property(sp, pp, i) {
 			if (SUNXI_PROP_TYPE_GPIO == sunxi_property_type(pp)) {
 				void *data = sunxi_property_value(pp);
 				strncpy(user_gpio_cfg[j].gpio_name, pp->name,

@@ -165,6 +165,7 @@ __u32 TCON1_open(__u32 sel);
 __u32 TCON1_close(__u32 sel);
 __u32 TCON1_cfg(__u32 sel, __tcon1_cfg_t *cfg);
 __u32 TCON1_cfg_ex(__u32 sel, __panel_para_t *info);
+__u32 TCON1_set_hdmi_var(__u32 sel, struct fb_var_screeninfo *mode);
 __u32 TCON1_set_hdmi_mode(__u32 sel, __u8 mode);
 __u32 TCON1_set_tv_mode(__u32 sel, __u8 mode);
 __s32 TCON1_set_vga_mode(__u32 sel, __u8 mode);

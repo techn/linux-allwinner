@@ -18,6 +18,7 @@
  */
 
 #include "hdmi_core.h"
+#include <linux/fb.h>
 
 __s32 hdmi_state = HDMI_State_Idle;
 __bool video_enable;
@@ -26,6 +27,7 @@ HDMI_AUDIO_INFO audio_info;
 __u8 EDID_Buf[1024];
 __u8 Device_Support_VIC[512];
 static __s32 HPD;
+struct fb_var_screeninfo current_timing;
 
 __u32 hdmi_pll;	/* 0:video pll 0; 1:video pll 1 */
 __u32 hdmi_clk = 297000000;
@@ -48,6 +50,47 @@ static HDMI_VIDE_INFO video_timing[] = {
 	{HDMI720P_60_3D_FP,  148500000,  0,  1280, 1440, 1650, 260, 110, 40, 3000, 25,  5,  5},
 };
 
+
+void set_timings(int index)
+{
+	if ((video_mode == HDMI1440_480I) || /* interlace and repeation */
+			(video_mode == HDMI1440_576I))
+		current_timing.vmode = FB_VMODE_DOUBLE | FB_VMODE_INTERLACED;
+	else if ((video_mode == HDMI1080I_50) || /* interlace */
+			(video_mode == HDMI1080I_60))
+		current_timing.vmode = FB_VMODE_INTERLACED;
+	else /* progressive */
+		current_timing.vmode = FB_VMODE_NONINTERLACED;
+
+
+	current_timing.sync = FB_SYNC_HOR_HIGH_ACT;
+
+	current_timing.pixclock = PICOS2KHZ(video_timing[index].PCLK/1000);
+	current_timing.xres = video_timing[index].INPUTX;
+	current_timing.yres = video_timing[index].INPUTY;
+	current_timing.left_margin =
+			video_timing[index].HBP - video_timing[index].HPSW;
+	current_timing.right_margin = video_timing[index].HFP;
+	current_timing.hsync_len = video_timing[index].HPSW;
+	current_timing.upper_margin =
+			video_timing[index].VBP - video_timing[index].VPSW;
+	current_timing.lower_margin = video_timing[index].VFP;
+	current_timing.vsync_len = video_timing[index].VPSW;
+}
+
+
+static __s32 get_video_info(__s32 vic)
+{
+	__s32 i, count;
+	count = sizeof(video_timing);
+	for (i = 0; i < count; i++)
+		if (vic == video_timing[i].VIC)
+			return i;
+
+	__wrn("can't find the video timing parameters\n");
+	return -1;
+}
+
 void hdmi_delay_ms(__u32 t)
 {
 	__u32 timeout = t * HZ / 1000;
@@ -58,8 +101,11 @@ void hdmi_delay_ms(__u32 t)
 
 __s32 hdmi_core_initial(void)
 {
+	int index;
 	hdmi_state = HDMI_State_Idle;
 	video_mode = HDMI720P_50;
+	index = get_video_info(video_mode);
+	set_timings(index);
 	memset(&audio_info, 0, sizeof(HDMI_AUDIO_INFO));
 	memset(Device_Support_VIC, 0, sizeof(Device_Support_VIC));
 
@@ -141,8 +187,19 @@ __s32 hdmi_main_task_loop(void)
 			return 0;
 
 	case HDMI_State_Video_config:
-		video_config(video_mode);
-		hdmi_state = HDMI_State_Audio_config;
+		{
+			if (video_mode) {
+				int index = get_video_info(video_mode);
+				if (index == -1) {
+					video_mode = HDMI720P_50;
+					index = get_video_info(video_mode);
+				}
+				set_timings(index);
+			}
+
+			video_config();
+			hdmi_state = HDMI_State_Audio_config;
+		}
 
 	case HDMI_State_Audio_config:
 		audio_config();
@@ -168,17 +225,6 @@ __s32 Hpd_Check(void)
 		return 0;
 }
 
-static __s32 get_video_info(__s32 vic)
-{
-	__s32 i, count;
-	count = sizeof(video_timing);
-	for (i = 0; i < count; i++)
-		if (vic == video_timing[i].VIC)
-			return i;
-
-	__wrn("can't find the video timing parameters\n");
-	return -1;
-}
 
 static __s32 get_audio_info(__s32 sample_rate)
 {
@@ -257,82 +303,97 @@ static __s32 get_audio_info(__s32 sample_rate)
 	return 0;
 }
 
-__s32 video_config(__s32 vic)
+__s32 video_config(void)
 {
+	bool repeation;
+	__s32 clk_div, reg_val;
+	bool threedMode = (video_mode == HDMI1080P_24_3D_FP) ||
+			(video_mode == HDMI720P_50_3D_FP) ||
+			(video_mode == HDMI720P_60_3D_FP);
 
-	__s32 vic_tab, clk_div, reg_val;
-
-	__inf("video_config, vic:%d\n", vic);
-
-	vic_tab = get_video_info(vic);
-	if (vic_tab == -1)
-		return 0;
-	else
-		video_mode = vic;
+	__inf("video_config,vic:%d (%d)[%dx%d]-%d,%d,%d-|%d,%d,%d|\n",
+			video_mode,
+			current_timing.pixclock,
+			current_timing.xres,
+			current_timing.yres,
+			current_timing.left_margin,
+			current_timing.right_margin,
+			current_timing.hsync_len,
+			current_timing.upper_margin,
+			current_timing.lower_margin,
+			current_timing.vsync_len);
 	HDMI_WUINT32(0x004, 0x00000000);
 	HDMI_WUINT32(0x040, 0x00000000); /* disable audio output */
 	HDMI_WUINT32(0x010, 0x00000000); /* disable video output */
 	/* interrupt mask and clear all interrupt */
 	HDMI_WUINT32(0x008, 0xffffffff);
 
-	if ((vic == HDMI1440_480I) || (vic == HDMI1440_576I))
-		HDMI_WUINT32(0x010, 0x00000011); /* interlace and repeation */
-	else if ((vic == HDMI1080I_50) || (vic == HDMI1080I_60))
-		HDMI_WUINT32(0x010, 0x00000010); /* interlace */
-	else
-		HDMI_WUINT32(0x010, 0x00000000); /* progressive */
+	/* vmode
+	 * 0x10 interlaced
+	 * 0x01 repeation
+	 * 0x00 progressive */
+	repeation = ((current_timing.vmode&FB_VMODE_DOUBLE) ==
+			FB_VMODE_DOUBLE);
+	HDMI_WUINT32(0x010,
+			((current_timing.vmode&FB_VMODE_INTERLACED) ==
+					FB_VMODE_INTERLACED) << 4 |
+						repeation);
+
 
 	/* need to use repetition? */
-	if ((vic == HDMI1440_480I) || (vic == HDMI1440_576I)) {
+	if (repeation) {
 		/* active H */
-		HDMI_WUINT16(0x014, (video_timing[vic_tab].INPUTX << 1) - 1);
+		HDMI_WUINT16(0x014, (current_timing.xres << 1) - 1);
 		/* active HBP */
-		HDMI_WUINT16(0x018, (video_timing[vic_tab].HBP << 1) - 1);
+		HDMI_WUINT16(0x018, ((current_timing.left_margin +
+				current_timing.hsync_len) << 1) - 1);
 		/* active HFP */
-		HDMI_WUINT16(0x01c, (video_timing[vic_tab].HFP << 1) - 1);
+		HDMI_WUINT16(0x01c, (current_timing.right_margin << 1) - 1);
 		/* active HSPW */
-		HDMI_WUINT16(0x020, (video_timing[vic_tab].HPSW << 1) - 1);
+		HDMI_WUINT16(0x020, (current_timing.hsync_len << 1) - 1);
 	} else {
 		/* active H */
-		HDMI_WUINT16(0x014, (video_timing[vic_tab].INPUTX << 0) - 1);
+		HDMI_WUINT16(0x014, (current_timing.xres << 0) - 1);
 		/* active HBP */
-		HDMI_WUINT16(0x018, (video_timing[vic_tab].HBP << 0) - 1);
+		HDMI_WUINT16(0x018, ((current_timing.left_margin +
+				current_timing.hsync_len) << 0) - 1);
 		/* active HFP */
-		HDMI_WUINT16(0x01c, (video_timing[vic_tab].HFP << 0) - 1);
+		HDMI_WUINT16(0x01c, (current_timing.right_margin << 0) - 1);
 		/* active HSPW */
-		HDMI_WUINT16(0x020, (video_timing[vic_tab].HPSW << 0) - 1);
+		HDMI_WUINT16(0x020, (current_timing.hsync_len << 0) - 1);
 	}
 
 	/* set active V */
-	if ((vic == HDMI1080P_24_3D_FP) || (vic == HDMI720P_50_3D_FP) ||
-	    (vic == HDMI720P_60_3D_FP))
-		HDMI_WUINT16(0x016, video_timing[vic_tab].INPUTY +
-			     video_timing[vic_tab].VBP +
-			     video_timing[vic_tab].VFP - 1);
+	if (threedMode)
+		HDMI_WUINT16(0x016, current_timing.yres +
+				 current_timing.upper_margin +
+			     current_timing.vsync_len +
+			     current_timing.lower_margin - 1);
 	else
-		HDMI_WUINT16(0x016, video_timing[vic_tab].INPUTY - 1);
+		HDMI_WUINT16(0x016, current_timing.yres - 1);
 
 
-	HDMI_WUINT16(0x01a, video_timing[vic_tab].VBP - 1); /* active VBP */
-	HDMI_WUINT16(0x01e, video_timing[vic_tab].VFP - 1); /* active VFP */
-	HDMI_WUINT16(0x022, video_timing[vic_tab].VPSW - 1); /* active VSPW */
+	HDMI_WUINT16(0x01a, current_timing.upper_margin +
+			current_timing.vsync_len - 1); /* active VBP */
+	HDMI_WUINT16(0x01e, current_timing.lower_margin - 1); /* active VFP */
+	HDMI_WUINT16(0x022, current_timing.vsync_len - 1); /* active VSPW */
 
-	if (video_timing[vic_tab].PCLK < 74250000) /* SD format */
+	if (current_timing.pixclock > 13468) /* SD format */
 		HDMI_WUINT16(0x024, 0x00); /* Vsync/Hsync pol */
 	else /* HD format */
 		HDMI_WUINT16(0x024, 0x03); /* Vsync/Hsync pol */
 
 	HDMI_WUINT16(0x026, 0x03e0); /* TX clock sequence */
 
-	/* avi packet */
-	HDMI_WUINT8(0x080, 0x82);
-	HDMI_WUINT8(0x081, 0x02);
-	HDMI_WUINT8(0x082, 0x0d);
-	HDMI_WUINT8(0x083, 0x00);
+	/* Auxiliary Video information (AVI) InfoFrame */
+	HDMI_WUINT8(0x080, 0x82); /* type */
+	HDMI_WUINT8(0x081, 0x02); /* version */
+	HDMI_WUINT8(0x082, 0x0d); /* len */
+	HDMI_WUINT8(0x083, 0x00); /* Checksum */
 #ifdef YUV_COLORSPACE /* Fix me */
 	/* 4:4:4 YCbCr */
 	HDMI_WUINT8(0x084, 0x50); /* Data Byte 1 */
-	if (video_timing[vic_tab].PCLK < 74250000) /* 4:3 601 */
+	if (current_timing.pixclock > 13468) /* 4:3 601 */
 		HDMI_WUINT8(0x085, 0x58); /* Data Byte 2 */
 	else /* 16:9 709 */
 		HDMI_WUINT8(0x085, 0xa8); /* Data Byte 2 */
@@ -343,11 +404,11 @@ __s32 video_config(__s32 vic)
 	HDMI_WUINT8(0x085, 0x58); /* Data Byte 2 */
 #endif
 
-	HDMI_WUINT8(0x086, 0x00);
-	HDMI_WUINT8(0x087, video_timing[vic_tab].VIC);
-	HDMI_WUINT8(0x088, video_timing[vic_tab].AVI_PR);
-	HDMI_WUINT8(0x089, 0x00);
-	HDMI_WUINT8(0x08a, 0x00);
+	HDMI_WUINT8(0x086, 0x00); /* Data Byte 3 */
+	HDMI_WUINT8(0x087, video_mode); /* Video Format Identification Code */
+	HDMI_WUINT8(0x088, repeation); /* Pixel Repetition factor */
+	HDMI_WUINT8(0x089, 0x00); /* Data Byte 6 */
+	HDMI_WUINT8(0x08a, 0x00); /* .. */
 	HDMI_WUINT8(0x08b, 0x00);
 	HDMI_WUINT8(0x08c, 0x00);
 	HDMI_WUINT8(0x08d, 0x00);
@@ -397,8 +458,7 @@ __s32 video_config(__s32 vic)
 	HDMI_WUINT8(0x252, 0x00);
 
 	/* packet config */
-	if ((vic != HDMI1080P_24_3D_FP) && (vic != HDMI720P_50_3D_FP) &&
-	    (vic != HDMI720P_60_3D_FP)) {
+	if (!threedMode) {
 		HDMI_WUINT32(0x2f0, 0x0000f321);
 		HDMI_WUINT32(0x2f4, 0x0000000f);
 	} else {
@@ -411,16 +471,11 @@ __s32 video_config(__s32 vic)
 	HDMI_WUINT8(0x013, 0xc0); /* hdmi mode */
 	HDMI_WUINT32(0x004, 0x80000000); /* start hdmi controller */
 
-	HDMI_WUINT8(0x013, 0xc0); /* hdmi mode */
-	HDMI_WUINT32(0x004, 0x80000000); /* start hdmi controller */
-
 	/* hdmi pll setting */
-	if ((vic == HDMI1440_480I) || (vic == HDMI1440_576I)) {
-		clk_div = hdmi_clk / video_timing[vic_tab].PCLK;
-		clk_div /= 2;
-	} else {
-		clk_div = hdmi_clk / video_timing[vic_tab].PCLK;
-	}
+	clk_div = hdmi_clk / (KHZ2PICOS(current_timing.pixclock) * 1000);
+	if (repeation)
+		clk_div = (clk_div >> 1);
+
 	clk_div &= 0x0f;
 
 	HDMI_WUINT32(0x208,

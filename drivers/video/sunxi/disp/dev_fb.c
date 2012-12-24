@@ -946,6 +946,10 @@ static int Fb_set_par(struct fb_info *info)
 			__u32 buffer_num = 1;
 			__u32 y_offset = 0;
 
+			if (g_fbi.disp_init.output_type[sel] ==
+					DISP_OUTPUT_TYPE_HDMI)
+				BSP_disp_hdmi_set_var(sel, var);
+
 			if (g_fbi.fb_mode[info->node] ==
 			    FB_MODE_DUAL_SAME_SCREEN_TB)
 				buffer_num = 2;
@@ -1265,6 +1269,18 @@ __s32 Display_Fb_Request(__u32 fb_id, __disp_fb_create_para_t * fb_para)
 					    tt.ver_front_porch;
 					info->var.hsync_len = tt.hor_sync_time;
 					info->var.vsync_len = tt.ver_sync_time;
+
+					__inf("HDMI Display_Fb_Request,"
+						"(%d)[%dx%d]-%d,%d,%d-|%d,%d,%d|\n",
+						info->var.pixclock,
+						info->var.xres,
+						info->var.yres,
+						info->var.left_margin,
+						info->var.right_margin,
+						info->var.hsync_len,
+						info->var.upper_margin,
+						info->var.lower_margin,
+						info->var.vsync_len);
 				}
 			}
 
@@ -1395,6 +1411,7 @@ __s32 Display_set_fb_timing(__u32 sel)
 	__u8 fb_id = 0;
 
 	for (fb_id = 0; fb_id < SUNXI_MAX_FB; fb_id++) {
+		struct fb_info *fbi = g_fbi.fbinfo[fb_id];
 		if (g_fbi.fb_enable[fb_id]) {
 			if (((sel == 0) &&
 			     (g_fbi.fb_mode[fb_id] == FB_MODE_SCREEN0 ||
@@ -1408,20 +1425,32 @@ __s32 Display_set_fb_timing(__u32 sel)
 				__disp_tcon_timing_t tt;
 
 				if (BSP_disp_get_timing(sel, &tt) >= 0) {
-					g_fbi.fbinfo[fb_id]->var.pixclock =
+					fbi->var.pixclock =
 					    1000000000 / tt.pixel_clk;
-					g_fbi.fbinfo[fb_id]->var.left_margin =
+					fbi->var.left_margin =
 					    tt.hor_back_porch;
-					g_fbi.fbinfo[fb_id]->var.right_margin =
+					fbi->var.right_margin =
 					    tt.hor_front_porch;
-					g_fbi.fbinfo[fb_id]->var.upper_margin =
+					fbi->var.upper_margin =
 					    tt.ver_back_porch;
-					g_fbi.fbinfo[fb_id]->var.lower_margin =
+					fbi->var.lower_margin =
 					    tt.ver_front_porch;
-					g_fbi.fbinfo[fb_id]->var.hsync_len =
+					fbi->var.hsync_len =
 					    tt.hor_sync_time;
-					g_fbi.fbinfo[fb_id]->var.vsync_len =
+					fbi->var.vsync_len =
 					    tt.ver_sync_time;
+
+					__inf("HDMI Display_set_fb_timming,"
+						"(%d)[%dx%d]-%d,%d,%d-|%d,%d,%d|\n",
+						fbi->var.pixclock,
+						fbi->var.xres,
+						fbi->var.yres,
+						fbi->var.left_margin,
+						fbi->var.right_margin,
+						fbi->var.hsync_len,
+						fbi->var.upper_margin,
+						fbi->var.lower_margin,
+						fbi->var.vsync_len);
 				}
 			}
 		}
@@ -1429,6 +1458,35 @@ __s32 Display_set_fb_timing(__u32 sel)
 
 	return 0;
 }
+
+void hdmi_edid_received(unsigned char *edid, int block)
+{
+	__u32 sel = 0;
+
+	for (sel = 0; sel < 2; sel++) {
+		struct fb_info *fbi = g_fbi.fbinfo[sel];
+		const __disp_init_t *d_init = &g_fbi.disp_init;
+		if (((sel == 0) && (d_init->disp_mode !=
+				DISP_INIT_MODE_SCREEN1)) ||
+				((sel == 1) && (d_init->disp_mode !=
+						DISP_INIT_MODE_SCREEN0))) {
+			if (d_init->output_type[sel] == DISP_OUTPUT_TYPE_HDMI) {
+				if (block == 0) {
+					fb_edid_to_monspecs(
+							edid, &fbi->monspecs);
+				} else {
+					fb_edid_add_monspecs(
+							edid, &fbi->monspecs);
+				}
+				fb_videomode_to_modelist(
+						fbi->monspecs.modedb,
+						fbi->monspecs.modedb_len,
+						&fbi->modelist);
+			}
+		}
+	}
+}
+EXPORT_SYMBOL(hdmi_edid_received);
 
 /* ??? --libv */
 extern unsigned long fb_start;

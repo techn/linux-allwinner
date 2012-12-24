@@ -883,6 +883,49 @@ static __s32 disp_pll_set(__u32 sel, __s32 videopll_sel, __u32 pll_freq,
 	return DIS_SUCCESS;
 }
 
+__s32 disp_hdmi_clk_cfg(__u32 sel, __u32 pixclock)
+{
+	__u32 pll_freq = 297000000, tve_freq = 27000000;
+	__u32 hdmi_freq = 74250000;
+	__s32 videopll_sel, pre_scale = 1;
+	__u32 lcd_clk_div = 0;
+	__u32 pll_2x = 0;
+	__u32 picos_pixclock = (KHZ2PICOS(pixclock)*1000);
+	if (27000000 >= picos_pixclock) {
+		pll_freq = 270000000;
+		tve_freq = picos_pixclock*2;
+		pre_scale = 2;
+		hdmi_freq = 27000000;
+	} else if (74250000 >= picos_pixclock) {
+		pll_freq = 297000000;
+		tve_freq = picos_pixclock;
+		pre_scale = 1;
+		hdmi_freq = 74250000;
+	} else if (148500000 >= picos_pixclock) {
+		pll_freq = 297000000;
+		tve_freq = picos_pixclock;
+		pre_scale = 1;
+		hdmi_freq = 148500000;
+	} else
+		return DIS_FAIL;
+
+	pll_2x = 0;
+	videopll_sel = disp_pll_assign(sel, pll_freq);
+	if (videopll_sel == -1)
+		return DIS_FAIL;
+
+	disp_pll_set(sel, videopll_sel, pll_freq, tve_freq,
+			pre_scale, lcd_clk_div, hdmi_freq, pll_2x,
+			DISP_OUTPUT_TYPE_HDMI);
+
+	if (videopll_sel == 0)
+		gdisp.screen[sel].pll_use_status |= VIDEO_PLL0_USED;
+	else if (videopll_sel == 1)
+		gdisp.screen[sel].pll_use_status |= VIDEO_PLL1_USED;
+
+	return DIS_SUCCESS;
+}
+
 /*
  * Config PLL and mclk depend on all kinds of display devices
  */

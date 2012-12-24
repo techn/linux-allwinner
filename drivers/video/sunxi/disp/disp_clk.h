@@ -80,6 +80,7 @@ __s32 lvds_clk_on(void);
 __s32 lvds_clk_off(void);
 
 __s32 disp_pll_init(void);
+__s32 disp_hdmi_clk_cfg(__u32 sel, __u32 pixclock);
 __s32 disp_clk_cfg(__u32 sel, __u32 type, __u8 mode);
 
 extern __disp_clk_tab clk_tab;

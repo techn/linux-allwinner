@@ -102,7 +102,7 @@ __s32 hdmi_core_close(void);
 __s32 hdmi_main_task_loop(void);
 __s32 Hpd_Check(void);
 __s32 ParseEDID(void);
-__s32 video_config(__s32 vic);
+__s32 video_config(void);
 __s32 audio_config(void);
 
 extern __u32 hdmi_pll; /* 0: video pll 0; 1: video pll 1 */
@@ -119,5 +119,6 @@ extern __bool video_enable;
 extern __s32 hdmi_state;
 extern __s32 video_mode;
 extern HDMI_AUDIO_INFO audio_info;
+extern struct fb_var_screeninfo current_timing;
 
 #endif

@@ -180,6 +180,28 @@ __s32 BSP_disp_hdmi_set_mode(__u32 sel, __disp_tv_mode_t mode)
 	return DIS_SUCCESS;
 }
 
+__s32 BSP_disp_hdmi_set_var(__u32 sel, struct fb_var_screeninfo *mode)
+{
+	if (gdisp.init_para.hdmi_set_var) {
+		gdisp.init_para.hdmi_set_var(mode);
+		gdisp.screen[sel].hdmi_mode = DISP_TV_MODE_NUM;
+
+		disp_hdmi_clk_cfg(sel, mode->pixclock);
+		DE_BE_set_display_size(sel, mode->xres, mode->yres);
+		TCON1_set_hdmi_var(sel, mode);
+
+		gdisp.screen[sel].b_out_interlace =
+				((mode->vmode&FB_VMODE_INTERLACED) ==
+						FB_VMODE_INTERLACED);
+
+	} else {
+		DE_WRN("hdmi_set_var is NULL\n");
+		return -1;
+	}
+
+	return DIS_SUCCESS;
+}
+
 __s32 BSP_disp_hdmi_get_mode(__u32 sel)
 {
 	return gdisp.screen[sel].hdmi_mode;

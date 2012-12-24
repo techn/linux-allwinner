@@ -546,6 +546,47 @@ __u32 TCON1_cfg_ex(__u32 sel, __panel_para_t *info)
 	return 0;
 }
 
+__u32 TCON1_set_hdmi_var(__u32 sel, struct fb_var_screeninfo *mode)
+{
+	__tcon1_cfg_t cfg;
+	cfg.b_interlace = ((mode->vmode&FB_VMODE_INTERLACED)
+			== FB_VMODE_INTERLACED);
+	cfg.src_x = cfg.scl_x = cfg.out_x = mode->xres;
+	cfg.src_y = cfg.scl_y = cfg.out_y = mode->yres
+			>> cfg.b_interlace; /* divide by two */
+	cfg.ht = mode->xres + mode->left_margin +
+			mode->right_margin + mode->hsync_len;
+	cfg.hbp = mode->left_margin + mode->hsync_len;
+	cfg.vt = (mode->yres + mode->upper_margin +
+			mode->lower_margin + mode->vsync_len) * 2;
+	cfg.vbp = mode->upper_margin + mode->vsync_len;
+	cfg.vspw = mode->vsync_len;
+	cfg.hspw = mode->hsync_len;
+	cfg.io_pol = 0x07000000;
+
+	__inf("HDMI TCON1_set_hdmi_var, [%dx%d]-%d,%d,%d-|%d,%d,%d|(%d)\n",
+			cfg.src_x,
+			cfg.src_y,
+			cfg.ht,
+			cfg.hbp,
+			cfg.vt,
+			cfg.vbp,
+			cfg.vspw,
+			cfg.hspw,
+			cfg.io_pol);
+
+	cfg.io_out = 0x00000000;
+	cfg.b_rgb_internal_hd = 0;
+	cfg.b_rgb_remap_io = 1; /*rgb*/
+	cfg.b_remap_if = 1;
+	TCON1_cfg(sel, &cfg);
+#ifdef CONFIG_ARCH_SUN4I
+	TCON_set_hdmi_src(sel);
+#endif
+
+	return 0;
+}
+
 __u32 TCON1_set_hdmi_mode(__u32 sel, __u8 mode)
 {
 	__tcon1_cfg_t cfg;

@@ -77,6 +77,7 @@ typedef struct {
 
 	void (*tve_interrup) (__u32 sel);
 	 __s32(*hdmi_set_mode) (__disp_tv_mode_t mode);
+	 __s32(*hdmi_set_var) (struct fb_var_screeninfo *mode);
 	 __s32(*Hdmi_open) (void);
 	 __s32(*Hdmi_close) (void);
 	 __s32(*hdmi_mode_support) (__disp_tv_mode_t mode);
@@ -255,6 +256,7 @@ extern __s32 BSP_disp_tv_get_dac_source(__u32 sel, __u32 index);
 extern __s32 BSP_disp_hdmi_open(__u32 sel);
 extern __s32 BSP_disp_hdmi_close(__u32 sel);
 extern __s32 BSP_disp_hdmi_set_mode(__u32 sel, __disp_tv_mode_t mode);
+extern __s32 BSP_disp_hdmi_set_var(__u32 sel, struct fb_var_screeninfo *mode);
 extern __s32 BSP_disp_hdmi_get_mode(__u32 sel);
 extern __s32 BSP_disp_hdmi_check_support_mode(__u32 sel, __u8 mode);
 extern __s32 BSP_disp_hdmi_get_hpd_status(__u32 sel);

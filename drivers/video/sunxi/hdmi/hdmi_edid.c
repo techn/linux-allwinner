@@ -18,6 +18,7 @@
  */
 
 #include "hdmi_core.h"
+#include "dev_hdmi.h"
 
 void DDC_Init(void)
 {
@@ -370,6 +371,7 @@ __s32 ParseEDID(void)
 	DDC_Init();
 
 	GetEDIDData(0, EDID_Buf);
+	hdmi_edid_received(EDID_Buf, 0);
 
 	if (EDID_CheckSum(0, EDID_Buf) != 0)
 		return 0;
@@ -392,6 +394,7 @@ __s32 ParseEDID(void)
 
 		for (i = 1; i <= BlockCount; i++) {
 			GetEDIDData(i, EDID_Buf);
+			hdmi_edid_received(EDID_Buf+(0x80*i), i);
 			if (EDID_CheckSum(i, EDID_Buf) != 0)
 				return 0;
 

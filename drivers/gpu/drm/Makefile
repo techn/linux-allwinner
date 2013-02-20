@@ -35,5 +35,6 @@ obj-$(CONFIG_DRM_SAVAGE)+= savage/
 obj-$(CONFIG_DRM_VMWGFX)+= vmwgfx/
 obj-$(CONFIG_DRM_VIA)	+=via/
 obj-$(CONFIG_DRM_MALI)	+= mali/
+obj-$(CONFIG_DRM_SUNXI)	+= sunxi/
 obj-$(CONFIG_DRM_NOUVEAU) +=nouveau/
 obj-y			+= i2c/

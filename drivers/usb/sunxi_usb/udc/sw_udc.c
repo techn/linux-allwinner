@@ -3110,7 +3110,7 @@ int usb_gadget_probe_driver(struct usb_gadget_driver *driver,
 	}
 
 	/* Enable udc */
-	sw_udc_enable(udc);
+	sw_udc_set_pullup(udc, 1);
 
 	return 0;
 
@@ -3159,14 +3159,15 @@ int usb_gadget_unregister_driver(struct usb_gadget_driver *driver)
 		driver->disconnect(&udc->gadget);
     }
 
+	/* Disable udc */
+	sw_udc_set_pullup(udc, 0);
+
     /* unbind gadget driver */
 	driver->unbind(&udc->gadget);
 	udc->gadget.dev.driver = NULL;
 	device_del(&udc->gadget.dev);
 	udc->driver = NULL;
 
-	/* Disable udc */
-	sw_udc_disable(udc);
 
 	return 0;
 }

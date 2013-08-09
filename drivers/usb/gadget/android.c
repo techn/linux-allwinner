@@ -315,7 +315,7 @@ static void print_msc_config(struct android_usb_config *config)
     printk("---------------------------\n");
 }
 
-extern struct android_usb_config g_android_usb_config;
+static struct android_usb_config g_android_usb_config;
 
 static s32 modify_device_data(void)
 {
